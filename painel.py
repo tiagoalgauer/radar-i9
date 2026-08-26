@@ -85,7 +85,8 @@ for _, m in f.head(200).iterrows():
     nota = f"**{int(m['relevancia'])}/10**" if pd.notna(m["relevancia"]) else "sem nota"
     with st.container(border=True):
         st.markdown(f"<div style='border-left:4px solid {borda};padding-left:.6rem'>{marca}<b><a href='{m['link']}' target='_blank'>{m['titulo']}</a></b></div>", unsafe_allow_html=True)
-        st.caption(f"{m['fonte'] or ''} · {m['data']} · {m['idioma']} · {nota} · {m['tema'] or ''} · {m['sentimento'] or ''} · termo: {m['termo']}")
+        partes = [m["fonte"], m["data"], m["idioma"], nota, m["tema"], m["sentimento"], f"termo: {m['termo']}"]
+        st.caption(" · ".join(str(x) for x in partes if pd.notna(x) and x))  # sem "nan"/vazios
         if m["resumo"] and m["resumo"] != m["titulo"]:
             st.write(m["resumo"])
 if len(f) > 200:
