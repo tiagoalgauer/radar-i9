@@ -1,11 +1,22 @@
-# Tema do Painel com a identidade da i9+ (logo branco sobre fundo escuro, barra vermelho→azul).
+# Tema do Painel com a identidade da i9+ (barra vermelho->azul, azul como cor principal).
+# Com [theme.light] e [theme.dark] definidos, o Streamlit mostra o botão sol/lua no topo:
+# cada pessoa escolhe claro ou escuro no próprio navegador.
 [theme]
 base = "dark"
 primaryColor = "#4592ff"
+font = "sans serif"
+
+[theme.dark]
 backgroundColor = "#0f1115"
 secondaryBackgroundColor = "#1a1d24"
 textColor = "#f2f2f2"
-font = "sans serif"
+borderColor = "#262a33"
+
+[theme.light]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f5f9"
+textColor = "#14171d"
+borderColor = "#dde2ea"
 
 [browser]
 gatherUsageStats = false

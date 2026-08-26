@@ -40,13 +40,15 @@ st.logo(str(RAIZ / "static" / "logo-i9.png"), size="large", link="https://inovem
 st.markdown(
     f"""<style>
     .block-container {{ padding-top: 1.2rem; }}
-    [data-testid="stMetric"] {{ background: #1a1d24; border-radius: 12px; padding: .9rem 1rem; }}
-    [data-testid="stMetricLabel"] {{ text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; opacity: .75; }}
+    [data-testid="stLogo"] {{ background:#0f1115; padding:.45rem .7rem; border-radius:8px; }}  /* logo branco: chip escuro em qualquer tema */
+    [data-testid="stMetricLabel"] {{ text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; opacity: .7; }}
+    /* cores fixas só nas etiquetas coloridas; o resto herda do tema (claro ou escuro) */
     .pill {{ display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600;
              letter-spacing:.02em; margin-right:.35rem; color:#fff; }}
-    .meta {{ color:#9aa0ab; font-size:.78rem; margin:.4rem 0 0; }}
-    .resumo {{ color:#c9ccd3; font-size:.88rem; line-height:1.4; }}
-    .titulo a {{ color:#f2f2f2; text-decoration:none; font-weight:600; font-size:1.02rem; }}
+    .pill.tema {{ background: rgba(128,136,150,.22); color: inherit; }}
+    .meta {{ opacity:.65; font-size:.78rem; margin:.4rem 0 0; }}
+    .resumo {{ opacity:.9; font-size:.88rem; line-height:1.4; }}
+    .titulo a {{ color:inherit; text-decoration:none; font-weight:600; font-size:1.02rem; }}
     .titulo a:hover {{ color:{AZUL}; }}
     .faixa {{ height:6px; border-radius:3px; background:linear-gradient(90deg,{VERMELHO},{AZUL}); margin-bottom:.6rem; }}
     </style><div class="faixa"></div>""",
@@ -126,14 +128,14 @@ por_dia = com_data.groupby("data").size().reindex(
     [(hoje - timedelta(days=i)).isoformat() for i in range(min(dias or 30, 30) - 1, -1, -1)], fill_value=0)
 fav, fav_ant = favorabilidade(f), favorabilidade(anterior) if anterior is not None else None
 k1, k2, k3, k4, k5 = st.columns(5)
-k1.metric("Menções", len(f), delta(len(f), len(anterior) if anterior is not None else None), chart_data=por_dia.tolist(), chart_type="area")
-k2.metric("Menções de marca", int(f["marca"].sum()), delta(int(f["marca"].sum()), int(anterior["marca"].sum()) if anterior is not None else None),
+k1.metric("Menções", len(f), delta(len(f), len(anterior) if anterior is not None else None), chart_data=por_dia.tolist(), chart_type="area", border=True)
+k2.metric("Menções de marca", int(f["marca"].sum()), delta(int(f["marca"].sum()), int(anterior["marca"].sum()) if anterior is not None else None), border=True,
           help="Citam a i9+/InoveMais diretamente (título ou trecho). Disparam Alerta no mesmo dia.")
 k3.metric("Favorabilidade", f"{fav}%" if fav is not None else "—",
           None if fav is None or fav_ant is None else f"{fav - fav_ant:+d} p.p. vs. período anterior",
-          help="Parcela de Menções positivas para a i9+ entre as já classificadas pela IA.")
-k4.metric("Veículos", int(f["fonte"].nunique()), help="Sites/jornais diferentes que publicaram.")
-k5.metric("Relevância média", f"{f['relevancia'].mean():.1f}/10" if f["relevancia"].notna().any() else "—",
+          border=True, help="Parcela de Menções positivas para a i9+ entre as já classificadas pela IA.")
+k4.metric("Veículos", int(f["fonte"].nunique()), border=True, help="Sites/jornais diferentes que publicaram.")
+k5.metric("Relevância média", f"{f['relevancia'].mean():.1f}/10" if f["relevancia"].notna().any() else "—", border=True,
           help="Nota 0–10 dada pela IA. Só ordena; nunca corta.")
 
 # ---------- Lista ----------
@@ -160,7 +162,7 @@ with aba_cartoes:
         for col, (_, m) in zip(st.columns(3), lote[i:i + 3]):
             etiquetas = pill(ICONE.get(m["sentimento"], "") + m["sentimento"], COR_SENT.get(m["sentimento"], "#3a3f4a"))
             if pd.notna(m["tema"]) and m["tema"]:
-                etiquetas += pill(m["tema"], "#2b3140")
+                etiquetas += f"<span class='pill tema'>{m['tema']}</span>"
             if m["marca"]:
                 etiquetas += pill(ICONE["marca"] + "i9+", VERMELHO)
             resumo = m["resumo"] if m["resumo"] and m["resumo"] != m["titulo"] else ""
