@@ -6,7 +6,7 @@
 
 **Status:** feita
 
-- [ ] `uv run streamlit run ...` abre o Painel local com um banco de exemplo
-- [ ] Status, filtros, destaque de marca e CSV funcionando
-- [ ] Teste de fumaça com o utilitário de teste do Streamlit, sem rede
-- [ ] Tudo em português; nada de edição de config pelo Painel (fora de escopo)
+- [x] `uv run streamlit run ...` abre o Painel local com um banco de exemplo
+- [x] Status, filtros, destaque de marca e CSV funcionando
+- [x] Teste de fumaça com o utilitário de teste do Streamlit, sem rede
+- [x] Tudo em português; nada de edição de config pelo Painel (fora de escopo)

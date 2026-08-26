@@ -6,9 +6,9 @@
 
 **Status:** feita
 
-- [ ] Repositório público no GitHub com o código
-- [ ] Workflow com `schedule` diário e `workflow_dispatch`, permissão `contents: write`
-- [ ] Commit do `radar.db` só quando houver mudança; commit do bot não redispara o cron
+- [x] Repositório público no GitHub com o código — https://github.com/tiagoalgauer/radar-i9
+- [x] Workflow com `schedule` diário e `workflow_dispatch`, permissão `contents: write`
+- [x] Commit do `radar.db` só quando houver mudança; commit do bot não redispara o cron
 - [ ] Segredos configurados; nenhum segredo no código
-- [ ] Um run manual verde com Menções reais commitadas; print do log como evidência
-- [ ] README: como configurar segredos, como disparar, como ler o log
+- [x] Um run manual verde com Menções reais commitadas (run 32919365594, 26/08, 208 Menções, commit 302bfdf) — falta o print
+- [x] README: como configurar segredos, como disparar, como ler o log

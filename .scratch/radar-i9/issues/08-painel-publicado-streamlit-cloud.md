@@ -4,7 +4,7 @@
 
 **Blocked by:** 06 (Robô na nuvem — GitHub Actions diário + commit do histórico), 07 (Painel v1 — Streamlit lendo o histórico)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (deploy no share.streamlit.io é clique do Tiago; código e README prontos)
 
 - [ ] Painel acessível por URL pública, sem senha, mostrando Menções reais
 - [ ] Depois de um run do robô, o Painel reflete as Menções novas sem intervenção
