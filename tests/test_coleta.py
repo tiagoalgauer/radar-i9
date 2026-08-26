@@ -14,7 +14,7 @@ link_painel = "https://radar-i9.streamlit.app"
 
 [ia]
 provedor = "gemini"
-modelo = "gemini-2.5-flash-lite"
+modelo = "gemini-3.5-flash-lite"
 
 [email]
 alerta = ["sandro@exemplo.com"]

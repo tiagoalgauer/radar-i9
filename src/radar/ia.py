@@ -52,7 +52,7 @@ def _json_da_resposta(texto: str) -> dict:
 
 
 class GeminiIA:
-    def __init__(self, chave: str, modelo: str = "gemini-2.5-flash-lite", esperar=time.sleep):
+    def __init__(self, chave: str, modelo: str = "gemini-3.5-flash-lite", esperar=time.sleep):
         self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent"
         self.chave, self.esperar = chave, esperar
 
@@ -84,7 +84,7 @@ class GroqIA:
 
 
 PROVEDORES = {  # provedor → (classe, variável de ambiente da chave, modelo padrão)
-    "gemini": (GeminiIA, "GEMINI_API_KEY", "gemini-2.5-flash-lite"),
+    "gemini": (GeminiIA, "GEMINI_API_KEY", "gemini-3.5-flash-lite"),
     "groq": (GroqIA, "GROQ_API_KEY", "openai/gpt-oss-120b"),
 }
 

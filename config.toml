@@ -5,7 +5,7 @@ link_painel = "https://radar-i9.streamlit.app"
 
 [ia]
 provedor = "gemini"                     # "gemini" | "groq"
-modelo = "gemini-2.5-flash-lite"
+modelo = "gemini-3.5-flash-lite"
 
 [email]
 alerta = ["sandro@inovemais.tec.br"]    # quem recebe o Alerta de marca
