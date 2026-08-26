@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** feita
 
 - [ ] Projeto Python 3.13 gerenciado com `uv`, `pytest` rodando, `config.toml` com Termos (com idiomas e flag de marca), Intervalo, destinatários, link do Painel, modelo de IA
 - [ ] Segredos só por variável de ambiente; nenhum segredo no repo

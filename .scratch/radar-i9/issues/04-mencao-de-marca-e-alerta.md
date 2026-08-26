@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (Esqueleto do projeto + primeira Coleta com dedupe)
 
-**Status:** ready-for-agent
+**Status:** feita
 
 - [ ] Teste: "InoveMais" no título → Menção marcada; "inovemais" e "i9+" também; Termo de setor não marca
 - [ ] Teste: Coleta com 2 Menções de marca novas → 1 e-mail com as 2; envio registrado

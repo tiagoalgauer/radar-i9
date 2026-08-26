@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (Esqueleto do projeto + primeira Coleta com dedupe)
 
-**Status:** ready-for-agent
+**Status:** feita
 
 - [ ] Teste (com fonte falsa que lança erro em um Termo): a Coleta termina, os outros Termos entram, o log registra a falha
 - [ ] Teste: os campos título, link, fonte, data e idioma vêm preenchidos a partir de um XML real gravado do Google News

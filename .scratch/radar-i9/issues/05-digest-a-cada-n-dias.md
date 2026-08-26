@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 (IA — resumo, Relevância, tema e sentimento), 04 (Menção de marca + Alerta de marca por e-mail)
 
-**Status:** ready-for-agent
+**Status:** feita
 
 - [ ] Teste: nunca houve Digest → envia
 - [ ] Teste: último Digest há Intervalo−1 dias → não envia; há Intervalo dias → envia

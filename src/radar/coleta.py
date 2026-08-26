@@ -89,7 +89,8 @@ def coletar(cfg: Config, fonte, ia, remetente, hoje: date, db_path: Path, log=pr
         except Exception as e:  # o robô nunca para por causa do provedor
             db.gravar_falha_de_ia(con, m.chave, m.titulo)
             falhas += 1
-            log(f"ia: falhou '{m.titulo}': {e}")
+            if falhas == 1:
+                log(f"ia: falhou '{m.titulo}': {e}")
     log(f"ia: {ok} ok, {falhas} falhas (ficam para reprocessar)")
 
     hoje_iso = hoje.isoformat()

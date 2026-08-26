@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (Esqueleto do projeto + primeira Coleta com dedupe)
 
-**Status:** ready-for-agent
+**Status:** feita
 
 - [ ] Teste: IA falsa devolve JSON → Menção gravada com resumo, Relevância, tema e sentimento
 - [ ] Teste: IA falsa lança erro → Menção gravada com título como resumo, Relevância vazia, marcada para reprocessar; Coleta não para

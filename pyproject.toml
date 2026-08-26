@@ -10,7 +10,7 @@ requires-python = ">=3.13"
 dependencies = []
 
 [project.scripts]
-radar = "radar:main"
+radar = "radar.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.11.26,<0.12.0"]

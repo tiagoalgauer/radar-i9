@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from radar!")
+"""Radar i9+ — agente de clipping da i9+/InoveMais."""
