@@ -4,8 +4,8 @@
 
 **Blocked by:** 05 (Digest a cada N dias)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human (instruções no README; falta o teste num Windows)
 
-- [ ] `.env.example` com todas as variáveis e comentários em português
-- [ ] Instruções curtas no README, testadas num Windows por alguém da equipe
-- [ ] Rodar local não envia e-mail por acidente: modo "simular envio" ligado por padrão fora do Actions
+- [x] `.env.example` com todas as variáveis e comentários em português
+- [ ] Instruções no README ✅ — falta testar num Windows por alguém da equipe
+- [x] Rodar local não envia e-mail por acidente: modo "simular envio" ligado por padrão fora do Actions

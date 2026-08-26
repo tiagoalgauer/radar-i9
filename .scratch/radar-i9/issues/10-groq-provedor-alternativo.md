@@ -4,9 +4,9 @@
 
 **Blocked by:** 03 (IA — resumo, Relevância, tema e sentimento)
 
-**Status:** ready-for-agent
+**Status:** feita (fumaça real fica para quando houver chave do Groq)
 
-- [ ] Teste: com `provedor = "groq"`, a Coleta usa o adaptador Groq (verificado com dublê)
-- [ ] Adaptador Groq sem SDK, mesma interface de um método, mesmo JSON de saída
+- [x] Teste: com `provedor = "groq"`, a Coleta usa o adaptador Groq (verificado com dublê)
+- [x] Adaptador Groq sem SDK, mesma interface de um método, mesmo JSON de saída
 - [ ] Fumaça rodada uma vez com uma chave gratuita do Groq
-- [ ] Trade-offs da stack no quadro citam o plano B
+- [x] Trade-offs da stack no quadro citam o plano B

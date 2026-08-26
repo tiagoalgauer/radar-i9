@@ -66,6 +66,32 @@ Publicar, de graça e sem domínio:
 
 Depois de 12h sem ninguém abrir, o app hiberna; quem abrir espera ~15 s ele acordar (fato verificado em `docs/research/`).
 
+## Rodar no PC da empresa (brinde — ticket 09)
+
+O mesmo robô, sem GitHub, num Windows. Uma vez só:
+
+1. Instalar o `uv`: abrir o **PowerShell** e colar `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`.
+2. Baixar o projeto: `git clone https://github.com/tiagoalgauer/radar-i9.git` (ou *Code → Download ZIP* e descompactar).
+3. Entrar na pasta: `cd radar-i9`.
+4. Copiar `.env.example` para `.env` e preencher `GEMINI_API_KEY` (e `SMTP_USER`/`SMTP_PASS` se quiser e-mail de verdade).
+5. `uv run radar` → faz uma Coleta; o histórico fica em `radar.db` **nesse PC**.
+6. Painel local: `uv run streamlit run painel.py` → abre http://localhost:8501.
+
+Sem `SMTP_USER`/`SMTP_PASS` nenhum e-mail sai (modo simulado). Para agendar todo dia sem o GitHub: *Agendador de Tarefas do Windows* → ação `uv run radar` na pasta do projeto. Testado em: _(pendente — anotar aqui o Windows e a data do primeiro teste)_.
+
+## Plano B de IA: Groq (ticket 10)
+
+Se a cota gratuita do Gemini mudar: criar uma chave grátis em https://console.groq.com (sem cartão), guardar como
+`GROQ_API_KEY` (Secret do GitHub ou `.env`) e trocar no `config.toml`:
+
+```toml
+[ia]
+provedor = "groq"
+modelo = "openai/gpt-oss-120b"
+```
+
+Nada mais muda. Teste: `uv run radar fumaca ia`.
+
 ## Configurar
 
 `config.toml` — Termos (com `marca = true` para os que disparam Alerta; `idiomas = []` para só detectar
