@@ -3,14 +3,13 @@
 Coleta de estreia (uma vez, na mão): `uv run radar --janela 1y --termos "InoveMais,i9+ baterias"` olha 1 ano
 para trás só nesses Termos. Também aceita RADAR_JANELA / RADAR_TERMOS no ambiente (é como o Actions passa)."""
 
-import dataclasses
 import os
 import sys
 from datetime import date
 from pathlib import Path
 
 from radar import correio, fontes, ia
-from radar.coleta import carregar_config, coletar
+from radar.coleta import carregar_config, coletar, restringir_busca
 
 RAIZ = Path(__file__).resolve().parents[2]
 
@@ -99,9 +98,8 @@ def main():
     janela = _opcao("janela", "RADAR_JANELA")
     termos = _opcao("termos", "RADAR_TERMOS")
     if termos:
-        quais = {t.strip().lower() for t in termos.split(",")}
-        cfg = dataclasses.replace(cfg, termos=tuple(t for t in cfg.termos if t.texto.lower() in quais))
-        print(f"coleta restrita a {len(cfg.termos)} termos: {', '.join(t.texto for t in cfg.termos)}")
+        cfg = restringir_busca(cfg, {t.strip().lower() for t in termos.split(",")})
+        print(f"coleta restrita a: {', '.join(t.texto for t in cfg.termos if t.idiomas)}")
     # "tudo" = sem filtro de data (o when: do Google News não alcança mais que alguns meses)
     google = fontes.FonteGoogleNews(janela="" if janela == "tudo" else f"when:{janela}") if janela else fontes.FonteGoogleNews()
     fonte = fontes.FonteMultipla(google, fontes.FonteBingNews())  # dois índices; o Bing traz trecho do corpo

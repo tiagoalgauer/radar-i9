@@ -1,5 +1,6 @@
 """Uma Coleta inteira: config → fonte → dedupe → IA → histórico → Alerta/Digest."""
 
+import dataclasses
 import hashlib
 import tomllib
 import unicodedata
@@ -63,6 +64,17 @@ def e_de_marca(cfg: Config, titulo: str, trecho: str = "") -> bool:
     """Só texto da Fonte (título + trecho). O resumo é gerado pela IA e já falou "não há menção à i9+" — nunca conta."""
     alvo = _simples(f"{titulo} {trecho or ''}")
     return any(_simples(t.texto) in alvo for t in cfg.termos if t.marca)
+
+
+def restringir_busca(cfg: Config, quais: set[str]) -> Config:
+    """Coleta de estreia: busca só nos Termos pedidos, mas a detecção de marca continua com TODOS os Termos de marca."""
+    termos = []
+    for t in cfg.termos:
+        if t.texto.lower() in quais:
+            termos.append(t)
+        elif t.marca:
+            termos.append(dataclasses.replace(t, idiomas=()))  # só detecta, não busca
+    return dataclasses.replace(cfg, termos=tuple(termos))
 
 
 def chave_de(link: str) -> str:

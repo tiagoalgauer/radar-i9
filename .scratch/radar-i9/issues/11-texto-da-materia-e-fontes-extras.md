@@ -13,7 +13,7 @@
 - [x] Fonte Google Alerts RSS (URL do alerta no config) com teste em XML gravado
 - [x] Fonte RSS genérica por URL (lista `[[fontes_rss]]` no config) com teste em XML gravado
 - [x] Mesma Notícia vinda de duas Fontes entra uma vez (dedupe pelo link final, não pelo redirecionador)
-- [ ] Coleta de estreia refeita nos Termos de marca: as matérias de 2025 sobre a i9+ aparecem com 🔔 no Painel
+- [x] Coleta de estreia refeita: matéria do Tecpar (Jornale, 04/2025) com 🔔 via trecho do Bing; a da Feira da Rua XV não veio com trecho em nenhuma Fonte (o texto só no corpo da Prefeitura). Obs.: o Bing devolve resultados diferentes por país do IP — o runner do GitHub (EUA) não viu a matéria; foi coletada localmente e commitada
 - [x] Limite documentado: LinkedIn/Instagram não têm API gratuita — ficam fora (dizer isso ao Parceiro)
 
 **Decisão (26/08):** Menção de marca é detectada só em texto da Fonte (título + trecho), **nunca no resumo da IA** — o modelo escreveu "não há menção à i9+" e gerou um Alerta falso. Diverge da spec ("título ou resumo") de propósito.

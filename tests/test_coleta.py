@@ -534,3 +534,14 @@ def test_mesma_materia_com_links_diferentes_entra_uma_vez_pelo_titulo(tmp_path):
     r = coletar(config(tmp_path), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
 
     assert (r["novas"], r["ignoradas"]) == (1, 1)
+
+
+def test_restringir_busca_mantem_todos_os_termos_de_marca_para_deteccao(tmp_path):
+    from radar.coleta import restringir_busca
+
+    cfg = restringir_busca(config(tmp_path), {"baterias de segunda vida"})
+
+    buscados = [t.texto for t in cfg.termos if t.idiomas]
+    marca = [t.texto for t in cfg.termos if t.marca]
+    assert buscados == ["baterias de segunda vida"]
+    assert marca == ["InoveMais", "i9+"]
