@@ -79,3 +79,56 @@ def listar_mencoes(caminho: Path) -> list[Mencao]:
         return [_mencao(r) for r in con.execute("SELECT * FROM mencoes ORDER BY coletada_em DESC, data DESC")]
     finally:
         con.close()
+
+
+def pendentes_de_ia(con) -> list[Mencao]:
+    return [_mencao(r) for r in con.execute("SELECT * FROM mencoes WHERE reprocessar = 1 ORDER BY coletada_em, data")]
+
+
+def gravar_analise(con, chave, resumo, relevancia, tema, sentimento):
+    con.execute(
+        "UPDATE mencoes SET resumo=?, relevancia=?, tema=?, sentimento=?, reprocessar=0 WHERE chave=?",
+        (resumo, relevancia, tema, sentimento, chave),
+    )
+
+
+def gravar_falha_de_ia(con, chave, titulo):
+    """Guarda mesmo assim: título vira resumo, sem nota, continua marcada para reprocessar."""
+    con.execute(
+        "UPDATE mencoes SET resumo=COALESCE(resumo, ?), tema='sem classificação', reprocessar=1 WHERE chave=?",
+        (titulo, chave),
+    )
+
+
+def gravar_marca(con, chave, marca: bool):
+    con.execute("UPDATE mencoes SET marca=? WHERE chave=?", (int(marca), chave))
+
+
+def analisadas_nesta_coleta(con, coletada_em) -> list[Mencao]:
+    return [_mencao(r) for r in con.execute("SELECT * FROM mencoes WHERE coletada_em = ?", (coletada_em,))]
+
+
+def sem_envio(con, tipo, mencoes) -> list[Mencao]:
+    """Menções que ainda não constam em nenhum envio desse tipo."""
+    ja = set()
+    for (chaves,) in con.execute("SELECT chaves FROM envios WHERE tipo = ?", (tipo,)):
+        ja.update(chaves.split(","))
+    return [m for m in mencoes if m.chave not in ja]
+
+
+def registrar_envio(con, tipo, data, mencoes):
+    con.execute(
+        "INSERT INTO envios (tipo, data, quantidade, chaves) VALUES (?, ?, ?, ?)",
+        (tipo, data, len(mencoes), ",".join(m.chave for m in mencoes)),
+    )
+
+
+def ultimo_envio(con, tipo) -> str | None:
+    r = con.execute("SELECT MAX(data) FROM envios WHERE tipo = ?", (tipo,)).fetchone()
+    return r[0] if r else None
+
+
+def todas_ordenadas_para_digest(con) -> list[Mencao]:
+    """Marca primeiro, depois Relevância decrescente (sem nota por último), depois data."""
+    return [_mencao(r) for r in con.execute(
+        "SELECT * FROM mencoes ORDER BY marca DESC, relevancia IS NULL, relevancia DESC, data DESC")]

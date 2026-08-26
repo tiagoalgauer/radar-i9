@@ -18,8 +18,12 @@ marca = true
 idiomas = ["pt", "en"]
 
 [[termos]]
-texto = "i9+ baterias"
+texto = "i9+"
 marca = true
+idiomas = []                            # só detecção de marca (buscar "i9+" traz lixo)
+
+[[termos]]
+texto = "i9+ baterias"
 idiomas = ["pt"]
 
 [[termos]]

@@ -26,6 +26,11 @@ marca = true
 idiomas = ["pt", "en"]
 
 [[termos]]
+texto = "i9+"
+marca = true
+idiomas = []   # só detecção de marca, não busca
+
+[[termos]]
 texto = "baterias de segunda vida"
 idiomas = ["pt"]
 """
@@ -110,3 +115,232 @@ def test_fonte_falhando_em_um_termo_nao_derruba_a_coleta(tmp_path):
 
     assert [m.link for m in listar_mencoes(db)] == ["https://ex.com/c"]
     assert any("InoveMais" in l and "feed fora do ar" in l for l in linhas)
+
+
+# ---------- ticket 03: IA ----------
+
+
+class IAQueFalha:
+    def __init__(self):
+        self.chamadas = 0
+
+    def analisar(self, titulo, fonte):
+        self.chamadas += 1
+        raise RuntimeError("cota estourada")
+
+
+class IAContadora(IAFalsa):
+    def __init__(self):
+        self.chamadas = []
+
+    def analisar(self, titulo, fonte):
+        self.chamadas.append(titulo)
+        return super().analisar(titulo, fonte)
+
+
+def test_ia_preenche_resumo_relevancia_tema_e_sentimento(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [N1]})
+    db = tmp_path / "radar.db"
+
+    coletar(config(tmp_path), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
+
+    m = listar_mencoes(db)[0]
+    assert (m.resumo, m.relevancia, m.tema, m.sentimento, m.reprocessar) == (
+        "Resumo de i9+ inaugura fábrica de baterias", 7, "setor", "neutro", False)
+
+
+def test_ia_falhando_guarda_a_mencao_e_marca_para_reprocessar(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [N1]})
+    db = tmp_path / "radar.db"
+    linhas = []
+
+    coletar(config(tmp_path), fonte, IAQueFalha(), RemetenteFalso(), HOJE, db, log=linhas.append)
+
+    m = listar_mencoes(db)[0]
+    assert (m.resumo, m.relevancia, m.tema, m.reprocessar) == ("i9+ inaugura fábrica de baterias", None, "sem classificação", True)
+    assert any("ia" in l and "1 falha" in l for l in linhas)
+
+
+def test_coleta_seguinte_reprocessa_mencao_pendente(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [N1]})
+    db = tmp_path / "radar.db"
+    cfg = config(tmp_path)
+    coletar(cfg, fonte, IAQueFalha(), RemetenteFalso(), HOJE, db)
+
+    coletar(cfg, fonte, IAFalsa(), RemetenteFalso(), date(2026, 8, 26), db)
+
+    m = listar_mencoes(db)[0]
+    assert (m.relevancia, m.reprocessar) == (7, False)
+
+
+def test_ia_e_chamada_uma_vez_por_mencao_nova_nunca_para_ja_vista(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [N1, N3]})
+    db = tmp_path / "radar.db"
+    cfg = config(tmp_path)
+    ia = IAContadora()
+
+    coletar(cfg, fonte, ia, RemetenteFalso(), HOJE, db)
+    coletar(cfg, fonte, ia, RemetenteFalso(), date(2026, 8, 26), db)
+
+    assert sorted(ia.chamadas) == sorted([N1.titulo, N3.titulo])
+
+
+# ---------- ticket 04: Menção de marca + Alerta ----------
+
+MARCA1 = Noticia("InoveMais fecha parceria com Lactec", "https://ex.com/m1", "Gazeta", "2026-08-25")
+MARCA2 = Noticia("Startup de Curitiba, a i9+ recicla baterias", "https://ex.com/m2", "Folha", "2026-08-25")
+MARCA_SEM_ACENTO = Noticia("Inovemais amplia fabrica", "https://ex.com/m3", "Bem Paraná", "2026-08-25")
+
+
+def marcas(db):
+    return sorted(m.link for m in listar_mencoes(db) if m.marca)
+
+
+def alertas(rem):
+    return [e for e in rem.enviados if "Alerta" in e[1]]
+
+
+def test_termo_de_marca_no_titulo_marca_a_mencao_sem_acento_e_sem_caixa(tmp_path):
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [MARCA1, MARCA_SEM_ACENTO, N3]})
+    db = tmp_path / "radar.db"
+
+    coletar(config(tmp_path), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
+
+    assert marcas(db) == ["https://ex.com/m1", "https://ex.com/m3"]
+
+
+def test_termo_de_setor_nao_marca(tmp_path):
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [N3]})
+    db = tmp_path / "radar.db"
+
+    coletar(config(tmp_path), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
+
+    assert marcas(db) == []
+
+
+def test_alerta_de_marca_envia_um_email_com_todas_as_mencoes_novas(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1, MARCA2], ("baterias de segunda vida", "pt"): [N3]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAFalsa(), rem, HOJE, db)
+
+    assert len(alertas(rem)) == 1
+    dest, assunto, texto, html = alertas(rem)[0]
+    assert dest == ["sandro@exemplo.com"]
+    assert "Alerta de marca: 2 menções" in assunto
+    for n in (MARCA1, MARCA2):
+        assert n.titulo in texto and n.link in html and n.fonte in texto
+    assert N3.titulo not in texto
+
+
+def test_alerta_nao_e_reenviado_na_segunda_coleta_do_dia(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+    cfg = config(tmp_path)
+
+    coletar(cfg, fonte, IAFalsa(), rem, HOJE, db)
+    coletar(cfg, fonte, IAFalsa(), rem, HOJE, db)
+
+    assert len(alertas(rem)) == 1
+
+
+def test_sem_mencao_de_marca_nao_ha_alerta(tmp_path):
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [N3]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAFalsa(), rem, HOJE, db)
+
+    assert alertas(rem) == []
+
+
+# ---------- ticket 05: Digest a cada N dias ----------
+
+
+def digests(rem):
+    return [e for e in rem.enviados if "Digest" in e[1]]
+
+
+def test_primeiro_digest_sai_quando_nunca_houve_digest(tmp_path):
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [N3]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAFalsa(), rem, HOJE, db)
+
+    (dest, assunto, texto, html) = digests(rem)[0]
+    assert dest == ["sandro@exemplo.com", "equipe@exemplo.com"]
+    assert N3.titulo in texto and "https://radar-i9.streamlit.app" in texto
+
+
+def test_digest_respeita_o_intervalo(tmp_path):
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [N3]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+    cfg = config(tmp_path)  # intervalo_dias = 7
+
+    coletar(cfg, fonte, IAFalsa(), rem, date(2026, 8, 1), db)   # primeiro Digest
+    coletar(cfg, fonte, IAFalsa(), rem, date(2026, 8, 7), db)   # 6 dias: não
+    coletar(cfg, fonte, IAFalsa(), rem, date(2026, 8, 8), db)   # 7 dias: sim
+    coletar(cfg, fonte, IAFalsa(), rem, date(2026, 8, 8), db)   # de novo no mesmo dia: não
+
+    assert len(digests(rem)) == 2
+
+
+def test_digest_ordena_marca_primeiro_depois_relevancia_e_sem_nota_por_ultimo(tmp_path):
+    NOTA3 = Noticia("Preço do lítio cai no mercado global", "https://ex.com/n3", "Valor", "2026-08-25")
+
+    class IAPorTitulo:
+        notas = {NOTA3.titulo: 3, N3.titulo: 9, MARCA1.titulo: 2}
+
+        def analisar(self, titulo, fonte):
+            if titulo == N2.titulo:
+                raise RuntimeError("falhou")
+            return {"resumo": "r", "relevancia": self.notas[titulo], "tema": "t", "sentimento": "neutro"}
+
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [NOTA3, N2, N3, MARCA1]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAPorTitulo(), rem, HOJE, db)
+
+    texto = digests(rem)[0][2]
+    pos = [texto.index(n.titulo) for n in (MARCA1, N3, NOTA3, N2)]
+    assert pos == sorted(pos)
+
+
+def test_digest_mostra_top_20_e_conta_o_resto(tmp_path):
+    muitas = [Noticia(f"Notícia {i:02d}", f"https://ex.com/{i}", "F", "2026-08-25") for i in range(25)]
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): muitas})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAFalsa(), rem, HOJE, db)
+
+    texto = digests(rem)[0][2]
+    assert sum(1 for n in muitas if n.titulo in texto) == 20
+    assert "mais 5" in texto and "https://radar-i9.streamlit.app" in texto
+
+
+def test_digest_vazio_e_enviado_quando_nao_ha_mencao_nova(tmp_path):
+    fonte = FonteFalsa({})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAFalsa(), rem, HOJE, db)
+
+    assert len(digests(rem)) == 1 and "Nenhuma menção nova" in digests(rem)[0][2]
+
+
+def test_mencao_de_marca_que_ja_gerou_alerta_continua_no_topo_do_digest(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1], ("baterias de segunda vida", "pt"): [N3]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAFalsa(), rem, HOJE, db)
+
+    alertas = [e for e in rem.enviados if "Alerta" in e[1]]
+    texto = digests(rem)[0][2]
+    assert len(alertas) == 1 and texto.index(MARCA1.titulo) < texto.index(N3.titulo)
