@@ -7,5 +7,5 @@
 **Status:** ready-for-human (instruções no README; falta o teste num Windows)
 
 - [x] `.env.example` com todas as variáveis e comentários em português
-- [ ] Instruções no README ✅ — falta testar num Windows por alguém da equipe
+- [ ] Instruções no README sim — falta testar num Windows por alguém da equipe
 - [x] Rodar local não envia e-mail por acidente: modo "simular envio" ligado por padrão fora do Actions
