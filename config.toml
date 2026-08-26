@@ -1,0 +1,71 @@
+# Configuração do Radar i9+ — a equipe edita este arquivo para o Parceiro.
+nome = "Radar i9+"
+intervalo_dias = 7                      # dias entre um Digest e o próximo (o Sandro escolhe)
+link_painel = "https://radar-i9.streamlit.app"
+
+[ia]
+provedor = "gemini"                     # "gemini" | "groq"
+modelo = "gemini-2.5-flash-lite"
+
+[email]
+alerta = ["sandro@inovemais.tec.br"]    # quem recebe o Alerta de marca
+digest = ["sandro@inovemais.tec.br"]    # quem recebe o Digest
+
+# Termos de marca (marca = true) disparam Alerta. Sem aspas no texto.
+[[termos]]
+texto = "InoveMais"
+marca = true
+idiomas = ["pt", "en"]
+
+[[termos]]
+texto = "i9+ baterias"
+marca = true
+idiomas = ["pt"]
+
+[[termos]]
+texto = "baterias de segunda vida"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "second-life batteries"
+idiomas = ["en"]
+
+[[termos]]
+texto = "economia circular baterias"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "circular economy batteries"
+idiomas = ["en"]
+
+[[termos]]
+texto = "baterias de lítio reciclagem"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "eletromobilidade"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "painéis solares requalificados"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "armazenamento de energia baterias"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "battery energy storage"
+idiomas = ["en"]
+
+[[termos]]
+texto = "Lactec"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "EMBRAPII energia"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "TSEA Energia"
+idiomas = ["pt"]
