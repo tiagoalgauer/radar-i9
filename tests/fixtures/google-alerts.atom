@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:idx="urn:atom-extension:indexing">
+<id>tag:google.com,2005:reader/user/0/state/com.google/alerts/1</id>
+<title>Alerta do Google - InoveMais</title>
+<link href="https://www.google.com/alerts/feeds/0/1" rel="self"/>
+<updated>2026-08-26T10:00:00Z</updated>
+<entry>
+<id>tag:google.com,2005:reader/item/1</id>
+<title type="html">Visita ao Parque Tecnológico da Indústria fortalece alianças entre empreendedores</title>
+<link href="https://www.google.com/url?rct=j&amp;sa=t&amp;url=https://www.senaipr.org.br/tecnologiaeinovacao/blog/visita-ao-parque-tecnologico&amp;ct=ga&amp;cd=1&amp;usg=AOvVaw0"/>
+<published>2025-11-12T14:03:00Z</published>
+<updated>2025-11-12T14:03:00Z</updated>
+<content type="html">Entre as empresas visitadas está a &lt;b&gt;i9+&lt;/b&gt; Baterias Elétricas e Energias, que desenvolve baterias de segunda vida em Curitiba.</content>
+<author><name></name></author>
+</entry>
+</feed>

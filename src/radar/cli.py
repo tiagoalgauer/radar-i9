@@ -65,7 +65,9 @@ class _IASemChave:
 
 def fumaca(alvo, cfg):
     if alvo == "fonte":
-        fonte = fontes.FonteGoogleNews()
+        fonte = fontes.FonteMultipla(fontes.FonteGoogleNews(), fontes.FonteBingNews())
+        for f in cfg.feeds:
+            print(f"feed '{f['nome']}': {len(fontes.FonteRSS().ler(f['url'], f['nome']))} noticias")
         for t in cfg.termos:
             for idioma in t.idiomas:
                 noticias = fonte.buscar(t.texto, idioma)
@@ -101,10 +103,11 @@ def main():
         cfg = dataclasses.replace(cfg, termos=tuple(t for t in cfg.termos if t.texto.lower() in quais))
         print(f"coleta restrita a {len(cfg.termos)} termos: {', '.join(t.texto for t in cfg.termos)}")
     # "tudo" = sem filtro de data (o when: do Google News não alcança mais que alguns meses)
-    fonte = fontes.FonteGoogleNews(janela="" if janela == "tudo" else f"when:{janela}") if janela else fontes.FonteGoogleNews()
+    google = fontes.FonteGoogleNews(janela="" if janela == "tudo" else f"when:{janela}") if janela else fontes.FonteGoogleNews()
+    fonte = fontes.FonteMultipla(google, fontes.FonteBingNews())  # dois índices; o Bing traz trecho do corpo
     if janela:
         print(f"janela de busca: {janela}")
-    r = coletar(cfg, fonte, _ia(cfg), _remetente(cfg), date.today(), RAIZ / "radar.db")
+    r = coletar(cfg, fonte, _ia(cfg), _remetente(cfg), date.today(), RAIZ / "radar.db", feeds=fontes.FonteRSS())
     print(f"resumo: {r}")
 
 

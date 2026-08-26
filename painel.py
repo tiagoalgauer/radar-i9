@@ -17,8 +17,12 @@ from radar.db import listar_mencoes, ultimo_envio_por_tipo, ultima_coleta
 DB = Path(os.environ.get("RADAR_DB", RAIZ / "radar.db"))
 cfg = carregar_config(RAIZ / "config.toml")
 
-st.set_page_config(page_title=cfg.nome, page_icon="📡", layout="wide")
-st.title(f"📡 {cfg.nome}")
+st.set_page_config(page_title=cfg.nome, page_icon=str(RAIZ / "static" / "logo-i9.png"), layout="wide")
+st.logo(str(RAIZ / "static" / "logo-i9.png"), size="large", link="https://inovemais.tec.br")
+st.markdown(
+    "<div style='height:6px;border-radius:3px;background:linear-gradient(90deg,#f5121c,#4592ff);margin-bottom:.6rem'></div>",
+    unsafe_allow_html=True)  # a barra do logo da i9+
+st.title(cfg.nome)
 st.caption("Menções à i9+/InoveMais e ao setor, coletadas todo dia pelo robô. Nada é descartado; a Relevância só ordena.")
 
 mencoes = listar_mencoes(DB) if DB.exists() else []
@@ -77,9 +81,10 @@ st.download_button("⬇️ Baixar tudo (CSV)", df.to_csv(index=False).encode("ut
 
 for _, m in f.head(200).iterrows():
     marca = "🔔 " if m["marca"] else ""
+    borda = "#f5121c" if m["marca"] else "#4592ff"
     nota = f"**{int(m['relevancia'])}/10**" if pd.notna(m["relevancia"]) else "sem nota"
     with st.container(border=True):
-        st.markdown(f"{marca}**[{m['titulo']}]({m['link']})**")
+        st.markdown(f"<div style='border-left:4px solid {borda};padding-left:.6rem'>{marca}<b><a href='{m['link']}' target='_blank'>{m['titulo']}</a></b></div>", unsafe_allow_html=True)
         st.caption(f"{m['fonte'] or ''} · {m['data']} · {m['idioma']} · {nota} · {m['tema'] or ''} · {m['sentimento'] or ''} · termo: {m['termo']}")
         if m["resumo"] and m["resumo"] != m["titulo"]:
             st.write(m["resumo"])

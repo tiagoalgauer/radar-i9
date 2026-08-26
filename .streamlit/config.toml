@@ -1,0 +1,11 @@
+# Tema do Painel com a identidade da i9+ (logo branco sobre fundo escuro, barra vermelho→azul).
+[theme]
+base = "dark"
+primaryColor = "#4592ff"
+backgroundColor = "#0f1115"
+secondaryBackgroundColor = "#1a1d24"
+textColor = "#f2f2f2"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false

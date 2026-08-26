@@ -48,7 +48,7 @@ class FonteFalsa:
 
 
 class IAFalsa:
-    def analisar(self, titulo, fonte):
+    def analisar(self, titulo, fonte, trecho=""):
         return {"resumo": f"Resumo de {titulo}", "relevancia": 7, "tema": "setor", "sentimento": "neutro"}
 
 
@@ -124,7 +124,7 @@ class IAQueFalha:
     def __init__(self):
         self.chamadas = 0
 
-    def analisar(self, titulo, fonte):
+    def analisar(self, titulo, fonte, trecho=""):
         self.chamadas += 1
         raise RuntimeError("cota estourada")
 
@@ -133,7 +133,7 @@ class IAContadora(IAFalsa):
     def __init__(self):
         self.chamadas = []
 
-    def analisar(self, titulo, fonte):
+    def analisar(self, titulo, fonte, trecho=""):
         self.chamadas.append(titulo)
         return super().analisar(titulo, fonte)
 
@@ -295,7 +295,7 @@ def test_digest_ordena_marca_primeiro_depois_relevancia_e_sem_nota_por_ultimo(tm
     class IAPorTitulo:
         notas = {NOTA3.titulo: 3, N3.titulo: 9, MARCA1.titulo: 2}
 
-        def analisar(self, titulo, fonte):
+        def analisar(self, titulo, fonte, trecho=""):
             if titulo == N2.titulo:
                 raise RuntimeError("falhou")
             return {"resumo": "r", "relevancia": self.notas[titulo], "tema": "t", "sentimento": "neutro"}
@@ -362,14 +362,15 @@ def test_xml_real_gravado_atravessa_a_coleta_inteira(tmp_path):
 
     r = coletar(config(tmp_path, toml), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
 
-    # InoveMais pt/en e 'economia circular baterias' pt leem os mesmos 2 arquivos: 8 (pt) + 31 (en), o resto é repetido
-    assert (r["novas"], r["ignoradas"]) == (39, 8)
-    assert len(listar_mencoes(db)) == 39
+    # InoveMais pt/en e 'economia circular baterias' pt leem os mesmos 2 arquivos: 8 (pt) + 31 (en), o resto é repetido;
+    # no fixture em inglês a mesma matéria aparece em 2 veículos → dedupe por título deixa 38
+    assert (r["novas"], r["ignoradas"]) == (38, 9)
+    assert len(listar_mencoes(db)) == 38
 
 
 def test_mencao_de_ontem_reprocessada_hoje_com_marca_no_resumo_gera_alerta(tmp_path):
     class IAQueCitaAMarca(IAFalsa):
-        def analisar(self, titulo, fonte):
+        def analisar(self, titulo, fonte, trecho=""):
             return {**super().analisar(titulo, fonte), "resumo": "A InoveMais foi citada como parceira."}
 
     fonte = FonteFalsa({("baterias de segunda vida", "pt"): [N3]})
@@ -458,3 +459,53 @@ def test_ultima_coleta_atualiza_mesmo_sem_mencao_nova(tmp_path):
     coletar(cfg, fonte, IAFalsa(), RemetenteFalso(), date(2026, 8, 26), db)
 
     assert ultima_coleta(db) == "2026-08-26"
+
+
+# ---------- ticket 11: trecho, feeds fixos, dedupe por título ----------
+
+
+def test_marca_no_trecho_marca_a_mencao_e_a_ia_recebe_o_trecho(tmp_path):
+    class IAQueGuardaOTexto(IAFalsa):
+        textos = []
+
+        def analisar(self, titulo, fonte, trecho=""):
+            self.textos.append(trecho)
+            return super().analisar(titulo, fonte)
+
+    n = Noticia("Feira de Inovação na Rua XV", "https://ex.com/feira", "Prefeitura", "2025-03-20",
+                trecho="A i9+ Baterias apresentou as primeiras baterias de lítio fabricadas no Brasil.")
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [n]})
+    db = tmp_path / "radar.db"
+    ia = IAQueGuardaOTexto()
+
+    coletar(config(tmp_path), fonte, ia, RemetenteFalso(), HOJE, db)
+
+    assert marcas(db) == ["https://ex.com/feira"]
+    assert ia.textos == [n.trecho]
+    assert listar_mencoes(db)[0].trecho == n.trecho
+
+
+def test_feeds_fixos_do_config_entram_com_o_nome_do_feed_como_termo(tmp_path):
+    toml = CONFIG_TOML + '\n[[feeds]]\nnome = "Embrapii"\nurl = "https://embrapii.org.br/feed/"\n'
+
+    class FeedsFalsos:
+        def ler(self, url, nome):
+            return [Noticia("Chamada Embrapii para baterias", "https://embrapii.org.br/x", nome, "2026-08-25")]
+
+    db = tmp_path / "radar.db"
+
+    coletar(config(tmp_path, toml), FonteFalsa({}), IAFalsa(), RemetenteFalso(), HOJE, db, feeds=FeedsFalsos())
+
+    m = listar_mencoes(db)[0]
+    assert (m.termo, m.fonte, m.idioma) == ("Embrapii", "Embrapii", "pt")
+
+
+def test_mesma_materia_com_links_diferentes_entra_uma_vez_pelo_titulo(tmp_path):
+    a = Noticia("ABSOLAR Meeting reúne profissionais do Sul", "https://news.google.com/rss/articles/abc", "Canal Solar", "2025-05-21")
+    b = Noticia("ABSOLAR Meeting reúne profissionais do Sul", "https://canalsolar.com.br/absolar-meeting", "Canal Solar", "2025-05-21")
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [a, b]})
+    db = tmp_path / "radar.db"
+
+    r = coletar(config(tmp_path), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
+
+    assert (r["novas"], r["ignoradas"]) == (1, 1)

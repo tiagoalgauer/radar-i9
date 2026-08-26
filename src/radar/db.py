@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS mencoes (
   sentimento TEXT,
   marca INTEGER NOT NULL DEFAULT 0,
   coletada_em TEXT NOT NULL,
-  reprocessar INTEGER NOT NULL DEFAULT 1
+  reprocessar INTEGER NOT NULL DEFAULT 1,
+  trecho TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS coletas (
   data TEXT PRIMARY KEY,
@@ -52,21 +53,27 @@ class Mencao:
     marca: bool
     coletada_em: str
     reprocessar: bool
+    trecho: str = ""
 
 
 def abrir(caminho: Path) -> sqlite3.Connection:
     con = sqlite3.connect(caminho)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    if "trecho" not in {r[1] for r in con.execute("PRAGMA table_info(mencoes)")}:  # banco anterior ao ticket 11
+        con.execute("ALTER TABLE mencoes ADD COLUMN trecho TEXT NOT NULL DEFAULT ''")
+        con.commit()
     return con
 
 
 def inserir_mencao(con, chave, noticia, idioma, termo, coletada_em) -> bool:
-    """True se entrou; False se já existia (dedupe pela chave)."""
+    """True se entrou; False se já existia (dedupe pela chave do link e, entre Fontes, pelo título)."""
+    if con.execute("SELECT 1 FROM mencoes WHERE lower(titulo) = lower(?) LIMIT 1", (noticia.titulo,)).fetchone():
+        return False
     cur = con.execute(
-        "INSERT OR IGNORE INTO mencoes (chave, titulo, link, fonte, data, idioma, termo, coletada_em)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (chave, noticia.titulo, noticia.link, noticia.fonte, noticia.data, idioma, termo, coletada_em),
+        "INSERT OR IGNORE INTO mencoes (chave, titulo, link, fonte, data, idioma, termo, coletada_em, trecho)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (chave, noticia.titulo, noticia.link, noticia.fonte, noticia.data, idioma, termo, coletada_em, getattr(noticia, "trecho", "") or ""),
     )
     return cur.rowcount == 1
 

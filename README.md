@@ -92,6 +92,20 @@ modelo = "openai/gpt-oss-120b"
 
 Nada mais muda. Teste: `uv run radar fumaca ia`.
 
+## Fontes (ticket 11)
+
+| Fonte | O que traz | Como configurar |
+|---|---|---|
+| **Google News RSS** | notícias por Termo, pt e en, últimos 2 dias | automático, por Termo |
+| **Bing News RSS** | segundo índice + **trecho do corpo** (ajuda a achar a marca e a IA) | automático, por Termo |
+| **Feeds fixos** (`[[feeds]]` no config) | RSS de sites (ex.: Embrapii) e **Google Alerts em modo RSS** (blogs, páginas, PDFs) | `nome` + `url` no `config.toml` |
+
+Google Alerts: em https://www.google.com/alerts crie o alerta (ex.: `InoveMais`, `"i9+" baterias`, `site:linkedin.com InoveMais`),
+em *Mostrar opções* escolha **Entregar para: Feed RSS**, copie a URL do feed e cole num `[[feeds]]`. Grátis, sem chave.
+A mesma matéria vinda de duas Fontes entra uma vez (link real + título).
+
+Fora do alcance (sem API gratuita): LinkedIn e Instagram — ver `docs/research/fontes-alem-do-google-news.md`.
+
 ## Configurar
 
 `config.toml` — Termos (com `marca = true` para os que disparam Alerta; `idiomas = []` para só detectar

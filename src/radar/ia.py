@@ -15,7 +15,11 @@ notícia diz — NÃO cite a i9+ nem a InoveMais no resumo a menos que a própri
 
 Título: {titulo}
 Fonte: {fonte}
-"""
+{trecho}"""
+
+
+def _prompt(titulo, fonte, trecho=""):
+    return PROMPT.format(titulo=titulo, fonte=fonte, trecho=f"Trecho: {trecho[:1500]}\n" if trecho else "")
 
 
 def _post_json(url, corpo, cabecalhos, tentativas=4, esperar=time.sleep):
@@ -56,9 +60,9 @@ class GeminiIA:
         self.url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent"
         self.chave, self.esperar = chave, esperar
 
-    def analisar(self, titulo: str, fonte: str) -> dict:
+    def analisar(self, titulo: str, fonte: str, trecho: str = "") -> dict:
         corpo = {
-            "contents": [{"parts": [{"text": PROMPT.format(titulo=titulo, fonte=fonte)}]}],
+            "contents": [{"parts": [{"text": _prompt(titulo, fonte, trecho)}]}],
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2},
         }
         r = _post_json(self.url, corpo, {"x-goog-api-key": self.chave}, esperar=self.esperar)
@@ -72,10 +76,10 @@ class GroqIA:
         self.url = "https://api.groq.com/openai/v1/chat/completions"
         self.chave, self.modelo, self.esperar = chave, modelo, esperar
 
-    def analisar(self, titulo: str, fonte: str) -> dict:
+    def analisar(self, titulo: str, fonte: str, trecho: str = "") -> dict:
         corpo = {
             "model": self.modelo,
-            "messages": [{"role": "user", "content": PROMPT.format(titulo=titulo, fonte=fonte)}],
+            "messages": [{"role": "user", "content": _prompt(titulo, fonte, trecho)}],
             "response_format": {"type": "json_object"},
             "temperature": 0.2,
         }

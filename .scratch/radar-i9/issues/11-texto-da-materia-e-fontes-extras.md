@@ -4,14 +4,14 @@
 
 **Blocked by:** 02 (Fonte real — Google News RSS). Lista de sites depende da reunião com o Sandro ("quais fontes importam?").
 
-**Status:** ready-for-agent
+**Status:** feita (falta só o Sandro indicar sites/alertas para os [[feeds]])
 
-- [ ] Notícia ganha campo `trecho` (opcional); Google News deixa vazio, Bing preenche com o snippet
-- [ ] Menção de marca considera título + trecho + resumo
-- [ ] Prompt da IA recebe o trecho quando existir
-- [ ] Fonte Bing News RSS (`bing.com/news/search?format=rss`) com teste em XML gravado
-- [ ] Fonte Google Alerts RSS (URL do alerta no config) com teste em XML gravado
-- [ ] Fonte RSS genérica por URL (lista `[[fontes_rss]]` no config) com teste em XML gravado
-- [ ] Mesma Notícia vinda de duas Fontes entra uma vez (dedupe pelo link final, não pelo redirecionador)
+- [x] Notícia ganha campo `trecho` (opcional); Google News deixa vazio, Bing preenche com o snippet
+- [x] Menção de marca considera título + trecho + resumo
+- [x] Prompt da IA recebe o trecho quando existir
+- [x] Fonte Bing News RSS (`bing.com/news/search?format=rss`) com teste em XML gravado
+- [x] Fonte Google Alerts RSS (URL do alerta no config) com teste em XML gravado
+- [x] Fonte RSS genérica por URL (lista `[[fontes_rss]]` no config) com teste em XML gravado
+- [x] Mesma Notícia vinda de duas Fontes entra uma vez (dedupe pelo link final, não pelo redirecionador)
 - [ ] Coleta de estreia refeita nos Termos de marca: as matérias de 2025 sobre a i9+ aparecem com 🔔 no Painel
-- [ ] Limite documentado: LinkedIn/Instagram não têm API gratuita — ficam fora (dizer isso ao Parceiro)
+- [x] Limite documentado: LinkedIn/Instagram não têm API gratuita — ficam fora (dizer isso ao Parceiro)

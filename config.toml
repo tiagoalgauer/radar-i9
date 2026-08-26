@@ -86,3 +86,9 @@ idiomas = ["pt"]
 [[termos]]
 texto = "TSEA Energia"
 idiomas = ["pt"]
+
+# Feeds fixos (RSS ou Atom) lidos todo dia, além das buscas por Termo. O nome vira o "Termo" da Menção.
+# Google Alerts: crie o alerta em google.com/alerts com "Entregar para: feed RSS" e cole a URL aqui.
+[[feeds]]
+nome = "Embrapii"
+url = "https://embrapii.org.br/feed/"

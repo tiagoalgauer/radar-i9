@@ -16,6 +16,7 @@ class Noticia:
     link: str
     fonte: str
     data: str  # ISO (AAAA-MM-DD)
+    trecho: str = ""  # pedaço do corpo, quando a Fonte entrega (Bing, Google Alerts, RSS de site)
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class Config:
     termos: tuple[Termo, ...]
     ia: dict = field(default_factory=dict)
     email: dict = field(default_factory=dict)
+    feeds: tuple[dict, ...] = ()  # [[feeds]] nome/url — RSS/Atom fixos (Google Alerts, sites)
 
 
 def carregar_config(caminho: Path) -> Config:
@@ -48,6 +50,7 @@ def carregar_config(caminho: Path) -> Config:
         termos=termos,
         ia=raw.get("ia", {}),
         email=raw.get("email", {}),
+        feeds=tuple(raw.get("feeds", [])),
     )
 
 
@@ -56,8 +59,8 @@ def _simples(texto: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", texto or "") if unicodedata.category(c) != "Mn").lower()
 
 
-def e_de_marca(cfg: Config, titulo: str, resumo: str | None) -> bool:
-    alvo = _simples(f"{titulo} {resumo or ''}")
+def e_de_marca(cfg: Config, titulo: str, resumo: str | None, trecho: str = "") -> bool:
+    alvo = _simples(f"{titulo} {trecho or ''} {resumo or ''}")
     return any(_simples(t.texto) in alvo for t in cfg.termos if t.marca)
 
 
@@ -81,15 +84,15 @@ def _enviar(con, cfg, remetente, tipo, mencoes, montar, hoje_iso, log) -> bool:
     return True
 
 
-def coletar(cfg: Config, fonte, ia, remetente, hoje: date, db_path: Path, log=print) -> dict:
+def coletar(cfg: Config, fonte, ia, remetente, hoje: date, db_path: Path, log=print, feeds=None) -> dict:
     con = db.abrir(db_path)
     try:
-        return _coletar(cfg, fonte, ia, remetente, hoje, con, log)
+        return _coletar(cfg, fonte, ia, remetente, hoje, con, log, feeds)
     finally:
         con.close()
 
 
-def _coletar(cfg, fonte, ia, remetente, hoje, con, log):
+def _coletar(cfg, fonte, ia, remetente, hoje, con, log, feeds):
     hoje_iso = hoje.isoformat()
     novas = ignoradas = 0
     for termo in cfg.termos:
@@ -104,6 +107,17 @@ def _coletar(cfg, fonte, ia, remetente, hoje, con, log):
                     novas += 1
                 else:
                     ignoradas += 1
+    for f in cfg.feeds if feeds else ():  # feeds fixos: o nome do feed faz as vezes do Termo
+        try:
+            noticias = feeds.ler(f["url"], f["nome"])
+        except Exception as e:
+            log(f"feed: falhou '{f['nome']}': {e}")
+            continue
+        for n in noticias:
+            if db.inserir_mencao(con, chave_de(n.link), n, f.get("idioma", "pt"), f["nome"], hoje_iso):
+                novas += 1
+            else:
+                ignoradas += 1
     db.registrar_coleta(con, hoje_iso, novas, ignoradas)
     con.commit()  # o dia está salvo antes de qualquer chamada de IA
     log(f"coleta: {len(cfg.termos)} termos, {novas} mencoes novas, {ignoradas} ja vistas")
@@ -113,7 +127,7 @@ def _coletar(cfg, fonte, ia, remetente, hoje, con, log):
     for m in db.pendentes_de_ia(con):
         tocadas.append(m.chave)
         try:
-            a = ia.analisar(m.titulo, m.fonte)
+            a = ia.analisar(m.titulo, m.fonte, m.trecho or "")
             db.gravar_analise(con, m.chave, a["resumo"], a.get("relevancia"), a.get("tema"), a.get("sentimento"))
             ok += 1
         except Exception as e:  # o robô nunca para por causa do provedor
@@ -125,7 +139,7 @@ def _coletar(cfg, fonte, ia, remetente, hoje, con, log):
 
     # marca é recalculada para tudo que passou pela IA nesta Coleta (novas e reprocessadas)
     for m in db.por_chaves(con, tocadas):
-        db.gravar_marca(con, m.chave, e_de_marca(cfg, m.titulo, m.resumo))
+        db.gravar_marca(con, m.chave, e_de_marca(cfg, m.titulo, m.resumo, m.trecho))
     con.commit()
 
     marcas = db.sem_envio(con, "alerta", db.mencoes_de_marca(con))

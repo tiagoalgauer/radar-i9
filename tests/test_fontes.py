@@ -37,3 +37,39 @@ def test_xml_real_em_ingles_tem_31_noticias_todas_com_titulo_link_e_data():
 
 def test_janela_vazia_busca_sem_filtro_de_data():
     assert url_de_busca("InoveMais", "pt", janela="") == "https://news.google.com/rss/search?q=InoveMais&hl=pt-BR&gl=BR&ceid=BR%3Apt-419"
+
+
+# ---------- ticket 11: trecho + Fontes extras ----------
+
+from radar.fontes import FonteBingNews, FonteRSS, url_bing
+
+
+def test_bing_news_real_traz_trecho_link_real_e_veiculo():
+    fonte = FonteBingNews(baixar=lambda url: (FIX / "bing-pt.xml").read_bytes())
+
+    noticias = fonte.buscar("baterias segunda vida", "pt")
+
+    assert len(noticias) == 11
+    n = noticias[0]
+    assert n.titulo == 'Nissan dá "segunda vida" às baterias do Leaf fora dos automóveis'
+    assert n.link == "https://www.noticiasaominuto.com/auto/2945724/nissan-da-segunda-vida-as-baterias-do-leaf-fora-dos-automoveis"
+    assert n.fonte == "Notícias ao Minuto" and n.data == "2026-02-26"
+    assert n.trecho.startswith("Quando já não servem para automóveis")
+    assert "format=rss" in url_bing("x", "pt") and "setlang=pt-BR" in url_bing("x", "pt") and "setlang=en-US" in url_bing("x", "en")
+
+
+def test_feed_rss_generico_embrapii():
+    noticias = FonteRSS(baixar=lambda url: (FIX / "embrapii.xml").read_bytes()).ler("https://embrapii.org.br/feed/", "Embrapii")
+
+    assert len(noticias) == 21
+    assert all(n.titulo and n.link.startswith("https://embrapii.org.br/") and n.data for n in noticias)
+    assert noticias[0].fonte == "Embrapii"
+
+
+def test_feed_atom_do_google_alerts_traz_link_real_e_trecho_sem_html():
+    noticias = FonteRSS(baixar=lambda url: (FIX / "google-alerts.atom").read_bytes()).ler("https://www.google.com/alerts/feeds/0/1", "Google Alerts")
+
+    assert len(noticias) == 1
+    n = noticias[0]
+    assert n.link == "https://www.senaipr.org.br/tecnologiaeinovacao/blog/visita-ao-parque-tecnologico"
+    assert n.data == "2025-11-12" and "i9+ Baterias" in n.trecho and "<b>" not in n.trecho
