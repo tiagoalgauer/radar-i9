@@ -106,6 +106,19 @@ A mesma matéria vinda de duas Fontes entra uma vez (link real + título).
 
 Fora do alcance (sem API gratuita): LinkedIn e Instagram — ver `docs/research/fontes-alem-do-google-news.md`.
 
+## Adicionar ou remover um Termo pelo Painel (botão)
+
+Na barra lateral do Painel, **Gerenciar Termos** -> senha da equipe -> formulário. O Painel grava o `config.toml` no GitHub
+por trás dos panos; o robô usa na próxima Coleta e o Painel republica sozinho em 1–2 min. Pra funcionar, dois Secrets no
+Streamlit Cloud (app -> Settings -> Secrets):
+
+```toml
+GITHUB_TOKEN = "github_pat_..."   # token fine-grained: só o repositório radar-i9, permissão Contents: Read and write
+SENHA_TERMOS = "uma senha combinada com o Sandro"
+```
+
+Token: GitHub -> Settings -> Developer settings -> Fine-grained tokens -> Generate; validade de 1 ano; ao vencer, gerar outro.
+
 ## Adicionar ou trocar um Termo sem instalar nada
 
 1. Abra https://github.com/tiagoalgauer/radar-i9/blob/main/config.toml e clique no lápis (**Edit**).

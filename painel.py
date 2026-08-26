@@ -17,8 +17,10 @@ sys.path.insert(0, str(RAIZ / "src"))  # Streamlit Cloud instala só o requireme
 
 from radar.coleta import carregar_config  # noqa: E402
 from radar.db import listar_mencoes, ultimo_envio_por_tipo, ultima_coleta
+from radar.termos import adicionar_termo, gravar_no_github, ler_no_github, remover_termo
 
 DB = Path(os.environ.get("RADAR_DB", RAIZ / "radar.db"))
+REPO = os.environ.get("RADAR_REPO", "tiagoalgauer/radar-i9")  # onde o config.toml mora; o Painel grava Termos lá
 cfg = carregar_config(RAIZ / "config.toml")
 
 # Paleta (validada p/ daltonismo sobre o fundo escuro): azul = setor, vermelho = marca (cores da i9+), verde = positivo.
@@ -83,6 +85,42 @@ with st.sidebar:
     idiomas = st.multiselect("Idioma", sorted(df["idioma"].dropna().unique()), key="idiomas")
     ordem = st.radio("Ordenar por", ["Relevância", "Mais recentes", "Mais antigas"], key="ordem",
                      help="Relevância: Menções da i9+ primeiro, depois a nota da IA. As outras duas seguem só a data de publicação.")
+
+
+def segredo(nome):
+    try:
+        return st.secrets.get(nome) or os.environ.get(nome)
+    except Exception:  # sem arquivo de secrets (rodando no PC)
+        return os.environ.get(nome)
+
+
+def gravar_termos(mensagem, editar):
+    """Lê o config.toml atual no GitHub, aplica a edição e grava por cima. Erros viram mensagem na tela."""
+    try:
+        atual, sha = ler_no_github(REPO, segredo("GITHUB_TOKEN"))
+        gravar_no_github(REPO, segredo("GITHUB_TOKEN"), editar(atual), sha, mensagem)
+        st.success("Feito. O robô usa a lista nova na próxima Coleta; o Painel atualiza em alguns minutos.")
+    except ValueError as e:
+        st.error(str(e))
+    except Exception as e:
+        st.error(f"Não consegui gravar no GitHub: {e}")
+
+
+with st.sidebar.expander("Gerenciar Termos"):
+    if not (segredo("GITHUB_TOKEN") and segredo("SENHA_TERMOS")):
+        st.caption("Ainda não configurado: faltam GITHUB_TOKEN e SENHA_TERMOS nos Secrets do Streamlit Cloud (ver README).")
+    elif st.text_input("Senha da equipe", type="password", key="senha_termos") != segredo("SENHA_TERMOS"):
+        st.caption("Com a senha dá pra adicionar ou remover Termos sem mexer no código.")
+    else:
+        with st.form("novo_termo", clear_on_submit=True):
+            texto = st.text_input("Novo Termo", placeholder="ex.: Lactec")
+            idiomas = st.multiselect("Buscar em", ["pt", "en"], default=["pt"], format_func={"pt": "português", "en": "inglês"}.get)
+            marca = st.checkbox("É nome da empresa (dispara Alerta no mesmo dia)")
+            if st.form_submit_button("Adicionar", icon=":material/add:"):
+                gravar_termos(f"termos: + {texto} (pelo Painel)", lambda t: adicionar_termo(t, texto, idiomas, marca))
+        remover = st.selectbox("Remover Termo", ["—", *(t.texto for t in cfg.termos)])
+        if remover != "—" and st.button("Remover", icon=":material/delete:"):
+            gravar_termos(f"termos: - {remover} (pelo Painel)", lambda t: remover_termo(t, remover))
 
 
 def no_periodo(base, inicio, fim):
