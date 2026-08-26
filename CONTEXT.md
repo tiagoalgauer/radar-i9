@@ -12,9 +12,29 @@ _Avoid_: cliente, empresa
 Uma palavra ou expressão que o robô pesquisa (ex.: "baterias de segunda vida"). A lista de Termos é do Parceiro.
 _Avoid_: keyword, palavra-chave, query
 
+**Notícia**:
+O item bruto que uma Fonte devolve (título, link, veículo, data), antes de entrar no histórico.
+_Avoid_: item, entrada, resultado
+
+**Fonte**:
+De onde as Notícias vêm. Hoje só o Google News; a busca é por Termo × idioma.
+_Avoid_: feed, provedor de notícias
+
 **Menção**:
-Uma notícia encontrada para um Termo. Nunca é descartada: toda Menção fica no histórico.
-_Avoid_: notícia, artigo, item, resultado
+Uma Notícia que entrou no histórico para um Termo. Nunca é descartada.
+_Avoid_: artigo, item, resultado
+
+**Tema**:
+Categoria curta em português que a IA dá a uma Menção (ex.: "baterias", "regulação").
+_Avoid_: categoria, tag
+
+**Sentimento**:
+Positivo, neutro ou negativo para a i9+, dado pela IA a uma Menção.
+_Avoid_: tom, polaridade
+
+**Envio**:
+Registro de um e-mail que saiu (Alerta ou Digest) com as Menções que ele levou. É o que impede reenvio.
+_Avoid_: log de e-mail, histórico de envio
 
 **Menção de marca**:
 Menção que cita a i9+/InoveMais diretamente. Dispara um Alerta de marca e vai no topo do Digest.

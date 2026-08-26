@@ -65,9 +65,30 @@ def chave_de(link: str) -> str:
     return hashlib.sha1(link.encode("utf-8")).hexdigest()
 
 
+def _enviar(con, cfg, remetente, tipo, mencoes, montar, hoje_iso, log) -> bool:
+    """Envia e registra. Se o e-mail falhar, não registra: a próxima Coleta tenta de novo."""
+    assunto, texto, html_ = montar(mencoes)
+    try:
+        remetente.enviar(list(cfg.email.get(tipo, [])), assunto, texto, html_)
+    except Exception as e:
+        log(f"{tipo}: falhou o envio ({e}); fica para a proxima Coleta")
+        return False
+    db.registrar_envio(con, tipo, hoje_iso, mencoes)
+    con.commit()
+    return True
+
+
 def coletar(cfg: Config, fonte, ia, remetente, hoje: date, db_path: Path, log=print) -> dict:
     con = db.abrir(db_path)
-    novas = 0
+    try:
+        return _coletar(cfg, fonte, ia, remetente, hoje, con, log)
+    finally:
+        con.close()
+
+
+def _coletar(cfg, fonte, ia, remetente, hoje, con, log):
+    hoje_iso = hoje.isoformat()
+    novas = ignoradas = 0
     for termo in cfg.termos:
         for idioma in termo.idiomas:
             try:
@@ -76,12 +97,17 @@ def coletar(cfg: Config, fonte, ia, remetente, hoje: date, db_path: Path, log=pr
                 log(f"fonte: falhou '{termo.texto}' ({idioma}): {e}")
                 continue
             for n in noticias:
-                if db.inserir_mencao(con, chave_de(n.link), n, idioma, termo.texto, hoje.isoformat()):
+                if db.inserir_mencao(con, chave_de(n.link), n, idioma, termo.texto, hoje_iso):
                     novas += 1
-    log(f"coleta: {len(cfg.termos)} termos, {novas} mencoes novas")
+                else:
+                    ignoradas += 1
+    con.commit()  # o dia está salvo antes de qualquer chamada de IA
+    log(f"coleta: {len(cfg.termos)} termos, {novas} mencoes novas, {ignoradas} ja vistas")
 
     ok = falhas = 0
+    tocadas = []
     for m in db.pendentes_de_ia(con):
+        tocadas.append(m.chave)
         try:
             a = ia.analisar(m.titulo, m.fonte)
             db.gravar_analise(con, m.chave, a["resumo"], a.get("relevancia"), a.get("tema"), a.get("sentimento"))
@@ -93,31 +119,25 @@ def coletar(cfg: Config, fonte, ia, remetente, hoje: date, db_path: Path, log=pr
                 log(f"ia: falhou '{m.titulo}': {e}")
     log(f"ia: {ok} ok, {falhas} falhas (ficam para reprocessar)")
 
-    hoje_iso = hoje.isoformat()
-    for m in db.analisadas_nesta_coleta(con, hoje_iso):
+    # marca é recalculada para tudo que passou pela IA nesta Coleta (novas e reprocessadas)
+    for m in db.por_chaves(con, tocadas):
         db.gravar_marca(con, m.chave, e_de_marca(cfg, m.titulo, m.resumo))
     con.commit()
 
-    marcas = db.sem_envio(con, "alerta", [m for m in db.analisadas_nesta_coleta(con, hoje_iso) if m.marca])
+    marcas = db.sem_envio(con, "alerta", db.mencoes_de_marca(con))
     if marcas:
-        assunto, texto, html_ = correio.montar_alerta(marcas, cfg.nome)
-        remetente.enviar(list(cfg.email.get("alerta", [])), assunto, texto, html_)
-        db.registrar_envio(con, "alerta", hoje_iso, marcas)
-        con.commit()
+        _enviar(con, cfg, remetente, "alerta", marcas, lambda ms: correio.montar_alerta(ms, cfg.nome), hoje_iso, log)
     log(f"alerta de marca: {'enviado com ' + str(len(marcas)) + ' mencoes' if marcas else 'nada novo'}")
 
     ultimo = db.ultimo_envio(con, "digest")
     passados = (hoje - date.fromisoformat(ultimo)).days if ultimo else None
-    digest = -1
+    digest = None
     if ultimo is None or passados >= cfg.intervalo_dias:
         pendentes = db.sem_envio(con, "digest", db.todas_ordenadas_para_digest(con))
-        assunto, texto, html_ = correio.montar_digest(pendentes, cfg.link_painel, cfg.intervalo_dias, cfg.nome)
-        remetente.enviar(list(cfg.email.get("digest", [])), assunto, texto, html_)
-        db.registrar_envio(con, "digest", hoje_iso, pendentes)
-        con.commit()
+        _enviar(con, cfg, remetente, "digest", pendentes,
+                lambda ms: correio.montar_digest(ms, cfg.link_painel, cfg.intervalo_dias, cfg.nome, primeiro=ultimo is None), hoje_iso, log)
         digest = len(pendentes)
         log(f"digest: enviado com {digest} mencoes ({'primeiro' if ultimo is None else str(passados) + ' dias desde o ultimo'})")
     else:
         log(f"digest: nao e dia ({passados} de {cfg.intervalo_dias} dias)")
-    con.close()
-    return {"novas": novas, "ia_ok": ok, "ia_falhas": falhas, "alerta": len(marcas), "digest": digest}
+    return {"novas": novas, "ignoradas": ignoradas, "ia_ok": ok, "ia_falhas": falhas, "alerta": len(marcas), "digest": digest}

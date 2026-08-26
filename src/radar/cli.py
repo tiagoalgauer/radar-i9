@@ -25,18 +25,30 @@ def _carregar_dotenv():
                 os.environ.setdefault(k.strip(), v.strip().strip('"'))
 
 
+NO_ACTIONS = bool(os.environ.get("GITHUB_ACTIONS"))
+
+
+def _exigir_no_actions(o_que):
+    """No GitHub Actions um segredo faltando é erro — nunca um run verde que não envia nada."""
+    if NO_ACTIONS:
+        sys.exit(f"erro: {o_que} não configurado nos Secrets do repositório")
+
+
 def _remetente(cfg):
     usuario, senha = _env("SMTP_USER"), _env("SMTP_PASS")
     if usuario and senha and _env("RADAR_SIMULAR_ENVIO") is None:
         return correio.RemetenteGmail(usuario, senha, cfg.nome)
+    _exigir_no_actions("SMTP_USER/SMTP_PASS")
     print("e-mail: modo simulado (defina SMTP_USER e SMTP_PASS para enviar de verdade)")
     return correio.RemetenteSimulado()
 
 
 def _ia(cfg):
-    chave = _env("GROQ_API_KEY") if cfg.ia.get("provedor") == "groq" else _env("GEMINI_API_KEY")
+    variavel = ia.variavel_da_chave(cfg.ia)
+    chave = _env(variavel)
     if not chave:
-        print("ia: sem chave (GEMINI_API_KEY / GROQ_API_KEY) — Menções ficam para reprocessar")
+        _exigir_no_actions(variavel)
+        print(f"ia: sem {variavel} — Menções ficam para reprocessar")
         return _IASemChave()
     return ia.criar(cfg.ia, chave)
 

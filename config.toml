@@ -63,7 +63,15 @@ texto = "battery energy storage"
 idiomas = ["en"]
 
 [[termos]]
+texto = "energia renovável baterias"
+idiomas = ["pt"]
+
+[[termos]]
 texto = "Lactec"
+idiomas = ["pt"]
+
+[[termos]]
+texto = "SENAI baterias"
 idiomas = ["pt"]
 
 [[termos]]

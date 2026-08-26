@@ -344,3 +344,68 @@ def test_mencao_de_marca_que_ja_gerou_alerta_continua_no_topo_do_digest(tmp_path
     alertas = [e for e in rem.enviados if "Alerta" in e[1]]
     texto = digests(rem)[0][2]
     assert len(alertas) == 1 and texto.index(MARCA1.titulo) < texto.index(N3.titulo)
+
+
+# ---------- regressões da revisão de código ----------
+
+from pathlib import Path
+
+from radar.fontes import FonteGoogleNews
+
+FIX = Path(__file__).parent / "fixtures"
+
+
+def test_xml_real_gravado_atravessa_a_coleta_inteira(tmp_path):
+    toml = CONFIG_TOML.replace('texto = "baterias de segunda vida"\nidiomas = ["pt"]', 'texto = "economia circular baterias"\nidiomas = ["pt"]')
+    fonte = FonteGoogleNews(baixar=lambda url: (FIX / ("gnews-pt.xml" if "pt-BR" in url else "gnews-en.xml")).read_bytes())
+    db = tmp_path / "radar.db"
+
+    r = coletar(config(tmp_path, toml), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
+
+    # InoveMais pt/en e 'economia circular baterias' pt leem os mesmos 2 arquivos: 8 (pt) + 31 (en), o resto é repetido
+    assert (r["novas"], r["ignoradas"]) == (39, 8)
+    assert len(listar_mencoes(db)) == 39
+
+
+def test_mencao_de_ontem_reprocessada_hoje_com_marca_no_resumo_gera_alerta(tmp_path):
+    class IAQueCitaAMarca(IAFalsa):
+        def analisar(self, titulo, fonte):
+            return {**super().analisar(titulo, fonte), "resumo": "A InoveMais foi citada como parceira."}
+
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [N3]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+    cfg = config(tmp_path)
+    coletar(cfg, fonte, IAQueFalha(), rem, date(2026, 8, 24), db)
+    assert alertas(rem) == []
+
+    coletar(cfg, fonte, IAQueCitaAMarca(), rem, HOJE, db)
+
+    assert len(alertas(rem)) == 1 and N3.titulo in alertas(rem)[0][2]
+
+
+def test_alerta_que_falhou_no_envio_sai_na_coleta_seguinte(tmp_path):
+    class RemetenteQueFalha(RemetenteFalso):
+        def enviar(self, *a):
+            raise ConnectionError("smtp fora do ar")
+
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1]})
+    db = tmp_path / "radar.db"
+    cfg = config(tmp_path)
+    linhas = []
+    coletar(cfg, fonte, IAFalsa(), RemetenteQueFalha(), HOJE, db, log=linhas.append)  # não explode
+    assert any("smtp fora do ar" in l for l in linhas)
+
+    rem = RemetenteFalso()
+    coletar(cfg, fonte, IAFalsa(), rem, date(2026, 8, 26), db)
+
+    assert len(alertas(rem)) == 1 and MARCA1.titulo in alertas(rem)[0][2]
+
+
+def test_marca_ignora_acento_e_caixa(tmp_path):
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [Noticia("INOVEMAÍS anuncia nova planta", "https://ex.com/ac", "F", "2026-08-25")]})
+    db = tmp_path / "radar.db"
+
+    coletar(config(tmp_path), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
+
+    assert marcas(db) == ["https://ex.com/ac"]

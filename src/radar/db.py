@@ -104,8 +104,15 @@ def gravar_marca(con, chave, marca: bool):
     con.execute("UPDATE mencoes SET marca=? WHERE chave=?", (int(marca), chave))
 
 
-def analisadas_nesta_coleta(con, coletada_em) -> list[Mencao]:
-    return [_mencao(r) for r in con.execute("SELECT * FROM mencoes WHERE coletada_em = ?", (coletada_em,))]
+def por_chaves(con, chaves) -> list[Mencao]:
+    if not chaves:
+        return []
+    q = ",".join("?" * len(chaves))
+    return [_mencao(r) for r in con.execute(f"SELECT * FROM mencoes WHERE chave IN ({q})", list(chaves))]
+
+
+def mencoes_de_marca(con) -> list[Mencao]:
+    return [_mencao(r) for r in con.execute("SELECT * FROM mencoes WHERE marca = 1 ORDER BY data DESC")]
 
 
 def sem_envio(con, tipo, mencoes) -> list[Mencao]:

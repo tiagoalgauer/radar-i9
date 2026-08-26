@@ -5,10 +5,11 @@ import time
 import urllib.error
 import urllib.request
 
-PROMPT = """Você é o assistente de clipping da i9+ / InoveMais, empresa brasileira de baterias de segunda vida,
-economia circular e energia renovável. Analise a notícia abaixo e responda SOMENTE um JSON com os campos:
-"resumo" (2 a 3 frases em português do Brasil, mesmo que a notícia esteja em outro idioma),
-"relevancia" (inteiro de 0 a 10: quanto essa notícia importa para a i9+ acompanhar),
+PROMPT = """Você analisa notícias para o Radar de uma empresa brasileira de baterias de segunda vida, economia circular
+e energia renovável (a i9+ / InoveMais). Analise a notícia abaixo e responda SOMENTE um JSON com os campos:
+"resumo" (2 a 3 frases em português do Brasil, mesmo que a notícia esteja em outro idioma; descreva SÓ o que a
+notícia diz — NÃO cite a i9+ nem a InoveMais no resumo a menos que a própria notícia as mencione),
+"relevancia" (inteiro de 0 a 10: quanto essa notícia importa para essa empresa acompanhar),
 "tema" (uma categoria curta em português, ex.: "baterias", "economia circular", "energia solar", "regulação", "concorrência", "parceiros"),
 "sentimento" ("positivo", "neutro" ou "negativo" para a i9+).
 
@@ -27,6 +28,11 @@ def _post_json(url, corpo, cabecalhos, tentativas=4, esperar=time.sleep):
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 502, 503) and i < tentativas - 1:
                 esperar(2 ** (i + 1))  # 2, 4, 8 s
+                continue
+            raise
+        except (urllib.error.URLError, TimeoutError):
+            if i < tentativas - 1:
+                esperar(2 ** (i + 1))
                 continue
             raise
 
@@ -76,8 +82,16 @@ class GroqIA:
         return _json_da_resposta(r["choices"][0]["message"]["content"])
 
 
+PROVEDORES = {  # provedor → (classe, variável de ambiente da chave, modelo padrão)
+    "gemini": (GeminiIA, "GEMINI_API_KEY", "gemini-2.5-flash-lite"),
+    "groq": (GroqIA, "GROQ_API_KEY", "openai/gpt-oss-120b"),
+}
+
+
+def variavel_da_chave(cfg_ia: dict) -> str:
+    return PROVEDORES[cfg_ia.get("provedor", "gemini")][1]
+
+
 def criar(cfg_ia: dict, chave: str):
-    provedor = cfg_ia.get("provedor", "gemini")
-    if provedor == "groq":
-        return GroqIA(chave, cfg_ia.get("modelo") or "openai/gpt-oss-120b")
-    return GeminiIA(chave, cfg_ia.get("modelo") or "gemini-2.5-flash-lite")
+    classe, _, modelo_padrao = PROVEDORES[cfg_ia.get("provedor", "gemini")]
+    return classe(chave, cfg_ia.get("modelo") or modelo_padrao)

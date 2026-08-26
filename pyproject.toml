@@ -1,7 +1,7 @@
 [project]
 name = "radar"
 version = "0.1.0"
-description = "Add your description here"
+description = "Radar i9+ — robô que vigia notícias da i9+/InoveMais e do setor, resume com IA e entrega por e-mail e Painel"
 readme = "README.md"
 authors = [
     { name = "Tiago Algauer Vieira", email = "tiagoalgauer@gmail.com" }
