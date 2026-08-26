@@ -92,7 +92,3 @@ idiomas = ["pt"]
 [[feeds]]
 nome = "Embrapii"
 url = "https://embrapii.org.br/feed/"
-
-[[termos]]
-texto = "teste do botão"
-idiomas = ["pt"]
