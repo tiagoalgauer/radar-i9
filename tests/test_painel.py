@@ -28,7 +28,7 @@ def test_painel_mostra_status_e_lista_e_filtro_de_marca_reduz(tmp_path, monkeypa
     app.pills(key="periodo").set_value("Tudo").run()  # a fixture é de 2026-08-25; "Tudo" não depende do dia de hoje
     valores = [m.value for m in app.metric]
     assert valores[0] == "3" and valores[1] == "1"  # Menções · Menções de marca
-    assert any("2026-08-25" in md.value and "7 dias" in md.value for md in app.markdown)  # Última Coleta / Intervalo
+    assert any("2026-08-25" in c.value and "7 dias" in c.value for c in app.caption)  # Última Coleta / Intervalo
     assert app.subheader[0].value == "3 de 3 Menções"
     assert any(MARCA1.titulo in md.value for md in app.markdown)
 
