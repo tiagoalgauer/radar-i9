@@ -46,7 +46,7 @@ st.markdown(
     .pill {{ display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600;
              letter-spacing:.02em; margin-right:.35rem; color:#fff; }}
     .pill.tema {{ background: rgba(128,136,150,.22); color: inherit; }}
-    .meta {{ opacity:.65; font-size:.78rem; margin:.4rem 0 0; }}
+    .meta {{ opacity:.78; font-size:.8rem; margin:.45rem 0 0; }}
     .resumo {{ opacity:.9; font-size:.88rem; line-height:1.4; }}
     .titulo a {{ color:inherit; text-decoration:none; font-weight:600; font-size:1.02rem; }}
     .titulo a:hover {{ color:{AZUL}; }}
@@ -161,8 +161,10 @@ with aba_cartoes:
             resumo = m["resumo"] if m["resumo"] and m["resumo"] != m["titulo"] else ""
             if len(resumo) > 220:
                 resumo = resumo[:220].rsplit(" ", 1)[0] + "…"
-            nota = f"{int(m['relevancia'])}/10" if pd.notna(m["relevancia"]) else "sem nota"
-            meta = " · ".join(str(x) for x in [m["fonte"], m["data"], nota] if pd.notna(x) and x)
+            nota = f"Relevância {int(m['relevancia'])}/10" if pd.notna(m["relevancia"]) else "sem nota"
+            data_br = "/".join(reversed(m["data"].split("-"))) if m["data"] else ""  # 2025-04-15 -> 15/04/2025
+            fonte = f"<b>{m['fonte']}</b>" if pd.notna(m["fonte"]) and m["fonte"] else ""
+            meta = " · ".join(x for x in [fonte, data_br, nota] if x)
             with col.container(border=True):
                 st.markdown(
                     f"<div>{etiquetas}</div>"
