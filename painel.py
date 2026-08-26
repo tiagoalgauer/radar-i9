@@ -81,6 +81,8 @@ with st.sidebar:
     sents = st.multiselect("Sentimento", ["positivo", "neutro", "negativo", "sem análise"], key="sents")
     termos = st.multiselect("Termo", sorted(df["termo"].dropna().unique()), key="termos")
     idiomas = st.multiselect("Idioma", sorted(df["idioma"].dropna().unique()), key="idiomas")
+    ordem = st.radio("Ordenar por", ["Relevância", "Mais recentes", "Mais antigas"], key="ordem",
+                     help="Relevância: Menções da i9+ primeiro, depois a nota da IA. As outras duas seguem só a data de publicação.")
 
 
 def no_periodo(base, inicio, fim):
@@ -132,7 +134,10 @@ k5.metric("Relevância média", f"{f['relevancia'].mean():.1f}/10" if f["relevan
           help="Nota 0–10 dada pela IA. Só ordena; nunca corta.")
 
 # ---------- Lista ----------
-f = f.sort_values(["marca", "relevancia", "data"], ascending=[False, False, False], na_position="last")
+if ordem == "Relevância":
+    f = f.sort_values(["marca", "relevancia", "data"], ascending=[False, False, False], na_position="last")
+else:
+    f = f.sort_values(["data", "coletada_em"], ascending=[ordem == "Mais antigas"] * 2, na_position="last")
 st.divider()
 t1, t2 = st.columns([3, 1], vertical_alignment="center")
 t1.subheader(f"{len(f)} de {len(df)} Menções")
