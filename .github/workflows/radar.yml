@@ -4,7 +4,14 @@ name: radar
 on:
   schedule:
     - cron: "0 11 * * *"        # 11:00 UTC = 08:00 em Curitiba
-  workflow_dispatch: {}         # botão "Run workflow" para demonstrar ao vivo
+  workflow_dispatch:            # botão "Run workflow" para demonstrar ao vivo
+    inputs:
+      janela:                   # ex.: 1y, 30d — coleta de estreia; vazio = normal (2 dias)
+        required: false
+        default: ""
+      termos:                   # ex.: "InoveMais,i9+ baterias" — restringe a esses Termos; vazio = todos
+        required: false
+        default: ""
 
 permissions:
   contents: write               # para commitar o radar.db de volta
@@ -27,6 +34,8 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           # Variável (não segredo) do repositório: qualquer valor = modo simulado explícito, sem enviar e-mail.
           RADAR_SIMULAR_ENVIO: ${{ vars.RADAR_SIMULAR_ENVIO }}
+          RADAR_JANELA: ${{ inputs.janela }}
+          RADAR_TERMOS: ${{ inputs.termos }}
         run: uv run --no-dev radar
 
       - name: Guardar o histórico no repositório

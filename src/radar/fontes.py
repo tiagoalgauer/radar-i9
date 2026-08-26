@@ -15,7 +15,8 @@ REGIAO = {  # idioma → parâmetros do Google News
 
 def url_de_busca(termo: str, idioma: str, janela: str = "when:2d") -> str:
     r = REGIAO.get(idioma, REGIAO["pt"])
-    return "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": f"{termo} {janela}", **r})
+    q = f"{termo} {janela}".strip()  # janela vazia = sem filtro de data (coleta de estreia)
+    return "https://news.google.com/rss/search?" + urllib.parse.urlencode({"q": q, **r})
 
 
 def baixar(url: str) -> bytes:

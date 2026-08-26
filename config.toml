@@ -27,6 +27,11 @@ texto = "i9+ baterias"
 idiomas = ["pt"]
 
 [[termos]]
+texto = "Inovemais Baterias"          # nome como aparece no CNPJ/Instagram
+marca = true
+idiomas = ["pt"]
+
+[[termos]]
 texto = "baterias de segunda vida"
 idiomas = ["pt"]
 

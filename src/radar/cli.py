@@ -1,5 +1,9 @@
-"""`uv run radar` — uma Coleta real. `uv run radar fumaca fonte|ia|email` — testa cada adaptador contra o mundo."""
+"""`uv run radar` — uma Coleta real. `uv run radar fumaca fonte|ia|email` — testa cada adaptador contra o mundo.
 
+Coleta de estreia (uma vez, na mão): `uv run radar --janela 1y --termos "InoveMais,i9+ baterias"` olha 1 ano
+para trás só nesses Termos. Também aceita RADAR_JANELA / RADAR_TERMOS no ambiente (é como o Actions passa)."""
+
+import dataclasses
 import os
 import sys
 from datetime import date
@@ -78,12 +82,29 @@ def fumaca(alvo, cfg):
         sys.exit("uso: radar fumaca fonte|ia|email")
 
 
+def _opcao(nome, env):
+    """--nome valor na linha de comando, senão a variável de ambiente, senão None."""
+    if f"--{nome}" in sys.argv:
+        return sys.argv[sys.argv.index(f"--{nome}") + 1]
+    return _env(env)
+
+
 def main():
     _carregar_dotenv()
     cfg = carregar_config(RAIZ / "config.toml")
     if len(sys.argv) > 1 and sys.argv[1] == "fumaca":
         return fumaca(sys.argv[2] if len(sys.argv) > 2 else "", cfg)
-    r = coletar(cfg, fontes.FonteGoogleNews(), _ia(cfg), _remetente(cfg), date.today(), RAIZ / "radar.db")
+    janela = _opcao("janela", "RADAR_JANELA")
+    termos = _opcao("termos", "RADAR_TERMOS")
+    if termos:
+        quais = {t.strip().lower() for t in termos.split(",")}
+        cfg = dataclasses.replace(cfg, termos=tuple(t for t in cfg.termos if t.texto.lower() in quais))
+        print(f"coleta restrita a {len(cfg.termos)} termos: {', '.join(t.texto for t in cfg.termos)}")
+    # "tudo" = sem filtro de data (o when: do Google News não alcança mais que alguns meses)
+    fonte = fontes.FonteGoogleNews(janela="" if janela == "tudo" else f"when:{janela}") if janela else fontes.FonteGoogleNews()
+    if janela:
+        print(f"janela de busca: {janela}")
+    r = coletar(cfg, fonte, _ia(cfg), _remetente(cfg), date.today(), RAIZ / "radar.db")
     print(f"resumo: {r}")
 
 

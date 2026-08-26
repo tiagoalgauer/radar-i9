@@ -33,3 +33,7 @@ def test_xml_real_em_ingles_tem_31_noticias_todas_com_titulo_link_e_data():
 
     assert len(noticias) == 31
     assert all(n.titulo and n.link and n.data for n in noticias)
+
+
+def test_janela_vazia_busca_sem_filtro_de_data():
+    assert url_de_busca("InoveMais", "pt", janela="") == "https://news.google.com/rss/search?q=InoveMais&hl=pt-BR&gl=BR&ceid=BR%3Apt-419"
