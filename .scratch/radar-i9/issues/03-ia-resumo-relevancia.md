@@ -12,4 +12,4 @@
 - [ ] Teste: a IA é chamada uma vez por Menção nova, nunca para Menção já vista
 - [ ] Adaptador Gemini sem SDK, chave só por variável de ambiente, retentativa em 429
 - [ ] Log mostra chamadas ok / falhas
-- [ ] Fumaça rodada uma vez com a chave do projeto; resposta colada como evidência
+- [x] IA real rodou no Actions (run 32920388790, 26/08): 184 Menções analisadas, 27 em 429 reprocessam amanhã
