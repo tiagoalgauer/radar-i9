@@ -423,3 +423,38 @@ def test_envio_simulado_nao_registra_e_o_digest_sai_de_verdade_depois(tmp_path):
     coletar(cfg, fonte, IAFalsa(), rem, date(2026, 8, 26), db)
 
     assert len(alertas(rem)) == 1 and len(digests(rem)) == 1
+
+
+def test_alerta_leva_o_link_do_painel(tmp_path):
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAFalsa(), rem, HOJE, db)
+
+    assert "https://radar-i9.streamlit.app" in alertas(rem)[0][2]
+
+
+def test_log_diz_nao_enviado_quando_o_envio_e_simulado(tmp_path):
+    from radar.correio import RemetenteSimulado
+
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1]})
+    linhas = []
+
+    coletar(config(tmp_path), fonte, IAFalsa(), RemetenteSimulado(log=lambda *_: None), HOJE, tmp_path / "radar.db", log=linhas.append)
+
+    assert any(l.startswith("alerta de marca: NAO enviado") for l in linhas)
+    assert any(l.startswith("digest: NAO enviado") for l in linhas)
+
+
+def test_ultima_coleta_atualiza_mesmo_sem_mencao_nova(tmp_path):
+    from radar.db import ultima_coleta
+
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1]})
+    db = tmp_path / "radar.db"
+    cfg = config(tmp_path)
+    coletar(cfg, fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
+
+    coletar(cfg, fonte, IAFalsa(), RemetenteFalso(), date(2026, 8, 26), db)
+
+    assert ultima_coleta(db) == "2026-08-26"

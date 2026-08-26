@@ -1,16 +1,19 @@
 """Painel do Radar i9+ — somente leitura, lê o radar.db do repositório. `uv run streamlit run painel.py`."""
 
 import os
+import sys
 from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-from radar.coleta import carregar_config
+RAIZ = Path(__file__).resolve().parent
+sys.path.insert(0, str(RAIZ / "src"))  # Streamlit Cloud instala só o requirements.txt; o pacote radar vive em src/
+
+from radar.coleta import carregar_config  # noqa: E402
 from radar.db import listar_mencoes, ultimo_envio_por_tipo, ultima_coleta
 
-RAIZ = Path(__file__).resolve().parent
 DB = Path(os.environ.get("RADAR_DB", RAIZ / "radar.db"))
 cfg = carregar_config(RAIZ / "config.toml")
 
@@ -60,10 +63,11 @@ if temas:
 if idiomas:
     f = f[f["idioma"].isin(idiomas)]
 if periodo and len(periodo) == 2:
-    f = f[(f["data"] >= periodo[0].isoformat()) & (f["data"] <= periodo[1].isoformat())]
+    sem_data = f["data"].fillna("") == ""  # Menção sem data nunca some por causa do período
+    f = f[sem_data | ((f["data"] >= periodo[0].isoformat()) & (f["data"] <= periodo[1].isoformat()))]
 if busca:
     b = busca.lower()
-    f = f[f["titulo"].str.lower().str.contains(b, na=False) | f["resumo"].fillna("").str.lower().str.contains(b)]
+    f = f[f["titulo"].str.lower().str.contains(b, regex=False, na=False) | f["resumo"].fillna("").str.lower().str.contains(b, regex=False)]
 
 f = f.sort_values(["marca", "relevancia", "data"], ascending=[False, False, False], na_position="last")
 

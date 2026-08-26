@@ -27,7 +27,7 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           # Variável (não segredo) do repositório: qualquer valor = modo simulado explícito, sem enviar e-mail.
           RADAR_SIMULAR_ENVIO: ${{ vars.RADAR_SIMULAR_ENVIO }}
-        run: uv run radar
+        run: uv run --no-dev radar
 
       - name: Guardar o histórico no repositório
         run: |

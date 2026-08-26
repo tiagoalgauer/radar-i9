@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS mencoes (
   coletada_em TEXT NOT NULL,
   reprocessar INTEGER NOT NULL DEFAULT 1
 );
+CREATE TABLE IF NOT EXISTS coletas (
+  data TEXT PRIMARY KEY,
+  novas INTEGER NOT NULL,
+  ignoradas INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS envios (
   id INTEGER PRIMARY KEY,
   tipo TEXT NOT NULL,
@@ -141,10 +146,14 @@ def todas_ordenadas_para_digest(con) -> list[Mencao]:
         "SELECT * FROM mencoes ORDER BY marca DESC, relevancia IS NULL, relevancia DESC, data DESC")]
 
 
+def registrar_coleta(con, data, novas, ignoradas):
+    con.execute("INSERT OR REPLACE INTO coletas (data, novas, ignoradas) VALUES (?, ?, ?)", (data, novas, ignoradas))
+
+
 def ultima_coleta(caminho: Path) -> str | None:
     con = abrir(caminho)
     try:
-        return con.execute("SELECT MAX(coletada_em) FROM mencoes").fetchone()[0]
+        return con.execute("SELECT MAX(data) FROM coletas").fetchone()[0]
     finally:
         con.close()
 

@@ -104,6 +104,7 @@ def _coletar(cfg, fonte, ia, remetente, hoje, con, log):
                     novas += 1
                 else:
                     ignoradas += 1
+    db.registrar_coleta(con, hoje_iso, novas, ignoradas)
     con.commit()  # o dia está salvo antes de qualquer chamada de IA
     log(f"coleta: {len(cfg.termos)} termos, {novas} mencoes novas, {ignoradas} ja vistas")
 
@@ -128,19 +129,20 @@ def _coletar(cfg, fonte, ia, remetente, hoje, con, log):
     con.commit()
 
     marcas = db.sem_envio(con, "alerta", db.mencoes_de_marca(con))
-    if marcas:
-        _enviar(con, cfg, remetente, "alerta", marcas, lambda ms: correio.montar_alerta(ms, cfg.nome), hoje_iso, log)
-    log(f"alerta de marca: {'enviado com ' + str(len(marcas)) + ' mencoes' if marcas else 'nada novo'}")
+    enviado = marcas and _enviar(con, cfg, remetente, "alerta", marcas,
+                                 lambda ms: correio.montar_alerta(ms, cfg.link_painel, cfg.nome), hoje_iso, log)
+    log(f"alerta de marca: {'enviado com ' + str(len(marcas)) + ' mencoes' if enviado else ('NAO enviado, ' + str(len(marcas)) + ' pendentes' if marcas else 'nada novo')}")
 
     ultimo = db.ultimo_envio(con, "digest")
     passados = (hoje - date.fromisoformat(ultimo)).days if ultimo else None
     digest = None
     if ultimo is None or passados >= cfg.intervalo_dias:
         pendentes = db.sem_envio(con, "digest", db.todas_ordenadas_para_digest(con))
-        _enviar(con, cfg, remetente, "digest", pendentes,
-                lambda ms: correio.montar_digest(ms, cfg.link_painel, cfg.intervalo_dias, cfg.nome, primeiro=ultimo is None), hoje_iso, log)
+        enviado = _enviar(con, cfg, remetente, "digest", pendentes,
+                          lambda ms: correio.montar_digest(ms, cfg.link_painel, cfg.intervalo_dias, cfg.nome, primeiro=ultimo is None), hoje_iso, log)
         digest = len(pendentes)
-        log(f"digest: enviado com {digest} mencoes ({'primeiro' if ultimo is None else str(passados) + ' dias desde o ultimo'})")
+        quando = 'primeiro' if ultimo is None else str(passados) + ' dias desde o ultimo'
+        log(f"digest: {'enviado' if enviado else 'NAO enviado'} com {digest} mencoes ({quando})")
     else:
         log(f"digest: nao e dia ({passados} de {cfg.intervalo_dias} dias)")
     return {"novas": novas, "ignoradas": ignoradas, "ia_ok": ok, "ia_falhas": falhas, "alerta": len(marcas), "digest": digest}

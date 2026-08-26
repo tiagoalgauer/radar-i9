@@ -26,12 +26,14 @@ def _item_html(m):
     )
 
 
-def montar_alerta(mencoes, nome="Radar i9+"):
+def montar_alerta(mencoes, link_painel, nome="Radar i9+"):
     n = len(mencoes)
     assunto = f"🔔 {nome} — Alerta de marca: {n} {'menções' if n != 1 else 'menção'} à i9+/InoveMais hoje"
-    texto = f"A i9+/InoveMais foi citada em {n} notícia(s) encontrada(s) hoje:\n\n" + "\n".join(_item_texto(m) for m in mencoes)
+    texto = (f"A i9+/InoveMais foi citada em {n} Menção(ões) encontrada(s) hoje:\n\n" + "\n".join(_item_texto(m) for m in mencoes)
+             + f"\nPainel completo: {link_painel}\n")
     corpo = "".join(_item_html(m) for m in mencoes)
-    html_ = f"<h2>{html.escape(nome)} — Alerta de marca</h2><p>A i9+/InoveMais foi citada em {n} notícia(s) encontrada(s) hoje:</p>{corpo}"
+    html_ = (f"<h2>{html.escape(nome)} — Alerta de marca</h2><p>A i9+/InoveMais foi citada em {n} Menção(ões) encontrada(s) hoje:</p>{corpo}"
+             f'<p><a href="{html.escape(link_painel)}">Abrir o Painel completo</a></p>')
     return assunto, texto, html_
 
 
