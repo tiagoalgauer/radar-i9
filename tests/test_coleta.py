@@ -409,3 +409,17 @@ def test_marca_ignora_acento_e_caixa(tmp_path):
     coletar(config(tmp_path), fonte, IAFalsa(), RemetenteFalso(), HOJE, db)
 
     assert marcas(db) == ["https://ex.com/ac"]
+
+
+def test_envio_simulado_nao_registra_e_o_digest_sai_de_verdade_depois(tmp_path):
+    from radar.correio import RemetenteSimulado
+
+    fonte = FonteFalsa({("InoveMais", "pt"): [MARCA1]})
+    db = tmp_path / "radar.db"
+    cfg = config(tmp_path)
+    coletar(cfg, fonte, IAFalsa(), RemetenteSimulado(log=lambda *_: None), HOJE, db)
+
+    rem = RemetenteFalso()
+    coletar(cfg, fonte, IAFalsa(), rem, date(2026, 8, 26), db)
+
+    assert len(alertas(rem)) == 1 and len(digests(rem)) == 1

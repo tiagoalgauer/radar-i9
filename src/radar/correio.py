@@ -73,6 +73,8 @@ class RemetenteGmail:
 class RemetenteSimulado:
     """Fora do GitHub Actions (ou sem credenciais) só imprime — ninguém recebe e-mail por acidente."""
 
+    simulado = True  # a Coleta não registra o envio: o Digest/Alerta sai de verdade quando houver credenciais
+
     def __init__(self, log=print):
         self.log = log
 

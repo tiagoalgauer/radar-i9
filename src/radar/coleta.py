@@ -73,6 +73,9 @@ def _enviar(con, cfg, remetente, tipo, mencoes, montar, hoje_iso, log) -> bool:
     except Exception as e:
         log(f"{tipo}: falhou o envio ({e}); fica para a proxima Coleta")
         return False
+    if getattr(remetente, "simulado", False):
+        log(f"{tipo}: simulado, nao registrado — sai de verdade quando houver credenciais")
+        return False
     db.registrar_envio(con, tipo, hoje_iso, mencoes)
     con.commit()
     return True
