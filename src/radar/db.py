@@ -139,3 +139,19 @@ def todas_ordenadas_para_digest(con) -> list[Mencao]:
     """Marca primeiro, depois Relevância decrescente (sem nota por último), depois data."""
     return [_mencao(r) for r in con.execute(
         "SELECT * FROM mencoes ORDER BY marca DESC, relevancia IS NULL, relevancia DESC, data DESC")]
+
+
+def ultima_coleta(caminho: Path) -> str | None:
+    con = abrir(caminho)
+    try:
+        return con.execute("SELECT MAX(coletada_em) FROM mencoes").fetchone()[0]
+    finally:
+        con.close()
+
+
+def ultimo_envio_por_tipo(caminho: Path, tipo) -> str | None:
+    con = abrir(caminho)
+    try:
+        return ultimo_envio(con, tipo)
+    finally:
+        con.close()

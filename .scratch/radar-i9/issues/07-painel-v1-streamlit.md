@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (Esqueleto do projeto + primeira Coleta com dedupe)
 
-**Status:** ready-for-agent
+**Status:** feita
 
 - [ ] `uv run streamlit run ...` abre o Painel local com um banco de exemplo
 - [ ] Status, filtros, destaque de marca e CSV funcionando

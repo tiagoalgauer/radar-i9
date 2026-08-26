@@ -41,6 +41,31 @@ uv run radar fumaca ia       # manda uma notícia de exemplo ao Gemini (ou Groq)
 uv run radar fumaca email    # envia um e-mail de teste para o próprio SMTP_USER
 ```
 
+## Robô na nuvem (GitHub Actions) — ticket 06
+
+O workflow `.github/workflows/radar.yml` roda todo dia às 08:00 (Curitiba) e por clique
+(*Actions → radar → Run workflow*). Ele coleta, resume, envia e commita o `radar.db` de volta (ADR-0001).
+
+1. No repositório: **Settings → Secrets and variables → Actions → Secrets** → `GEMINI_API_KEY`, `SMTP_USER`, `SMTP_PASS`.
+2. Enquanto os segredos não existem, ligue o **modo demonstração**: **Variables** → `RADAR_SIMULAR_ENVIO` = `1`.
+   Sem essa variável e sem segredos o run **falha de propósito** (nunca um run verde que não envia nada).
+3. Para demonstrar ao vivo: *Actions → radar → Run workflow*. O log mostra as linhas `coleta:`, `ia:`, `alerta de marca:`, `digest:`.
+
+O cron do GitHub desliga se o repositório ficar 60 dias sem atividade — o commit diário do robô já conta como atividade.
+
+## Painel na web (Streamlit Community Cloud) — tickets 07 e 08
+
+Local: `uv run streamlit run painel.py` (abre em http://localhost:8501).
+
+Publicar, de graça e sem domínio:
+
+1. Entrar em https://share.streamlit.io com a conta do **GitHub** (nenhuma conta nova).
+2. *Create app → Deploy a public app from GitHub* → repositório `radar-i9`, branch `main`, arquivo `painel.py`.
+3. Em *App URL* escolher `radar-i9` → o endereço fica `https://radar-i9.streamlit.app`. Se mudar, atualize `link_painel` no `config.toml`.
+4. O app relê o repositório a cada commit do robô, então o Painel acompanha o `radar.db` sozinho.
+
+Depois de 12h sem ninguém abrir, o app hiberna; quem abrir espera ~15 s ele acordar (fato verificado em `docs/research/`).
+
 ## Configurar
 
 `config.toml` — Termos (com `marca = true` para os que disparam Alerta; `idiomas = []` para só detectar
@@ -67,5 +92,7 @@ src/radar/
   ia.py            Gemini (plano A) / Groq (plano B)
   correio.py       Alerta, Digest, SMTP do Gmail
   cli.py           `uv run radar` e os comandos de fumaça
+painel.py          Painel Streamlit (lê radar.db)
+.github/workflows/ o cron diário
 tests/             pytest com dublês; fixtures = XML real do Google News
 ```

@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 (Fonte real — Google News RSS em pt e en)
 
-**Status:** ready-for-agent
+**Status:** feita
 
 - [ ] Repositório público no GitHub com o código
 - [ ] Workflow com `schedule` diário e `workflow_dispatch`, permissão `contents: write`

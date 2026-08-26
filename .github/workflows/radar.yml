@@ -1,0 +1,40 @@
+# Radar i9+ — o robô acorda sozinho todo dia (ADR-0001). Ninguém aperta nada.
+name: radar
+
+on:
+  schedule:
+    - cron: "0 11 * * *"        # 11:00 UTC = 08:00 em Curitiba
+  workflow_dispatch: {}         # botão "Run workflow" para demonstrar ao vivo
+
+permissions:
+  contents: write               # para commitar o radar.db de volta
+
+concurrency: radar              # nunca duas Coletas ao mesmo tempo
+
+jobs:
+  coleta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --no-dev
+
+      - name: Coleta
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          # Variável (não segredo) do repositório: qualquer valor = modo simulado explícito, sem enviar e-mail.
+          RADAR_SIMULAR_ENVIO: ${{ vars.RADAR_SIMULAR_ENVIO }}
+        run: uv run radar
+
+      - name: Guardar o histórico no repositório
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add radar.db
+          git diff --cached --quiet && echo "sem mudanca no historico" && exit 0
+          git commit -m "radar: coleta de $(date -u +%Y-%m-%d)"
+          git pull --rebase
+          git push

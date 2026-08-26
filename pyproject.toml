@@ -7,7 +7,9 @@ authors = [
     { name = "Tiago Algauer Vieira", email = "tiagoalgauer@gmail.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "streamlit>=1.62.0",
+]
 
 [project.scripts]
 radar = "radar.cli:main"

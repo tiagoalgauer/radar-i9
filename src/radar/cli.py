@@ -29,9 +29,10 @@ NO_ACTIONS = bool(os.environ.get("GITHUB_ACTIONS"))
 
 
 def _exigir_no_actions(o_que):
-    """No GitHub Actions um segredo faltando é erro — nunca um run verde que não envia nada."""
-    if NO_ACTIONS:
-        sys.exit(f"erro: {o_que} não configurado nos Secrets do repositório")
+    """No GitHub Actions um segredo faltando é erro — nunca um run verde que não envia nada.
+    Exceção explícita: a variável RADAR_SIMULAR_ENVIO ligada no repositório (modo demonstração)."""
+    if NO_ACTIONS and _env("RADAR_SIMULAR_ENVIO") is None:
+        sys.exit(f"erro: {o_que} não configurado nos Secrets do repositório (ou ligue a variável RADAR_SIMULAR_ENVIO)")
 
 
 def _remetente(cfg):
