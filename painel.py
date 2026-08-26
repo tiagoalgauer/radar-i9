@@ -1,7 +1,7 @@
 """Painel do Radar i9+ — somente leitura, lê o radar.db do repositório. `uv run streamlit run painel.py`.
 
 Layout inspirado nas plataformas de clipping (Brand24, Knewin, Zeeng, CoverageBook): números grandes no topo
-com variação vs. período anterior, filtros numa linha, cartões de Menção. Gráficos ficaram no commit ca1cc7f até a equipe decidir quais quer.
+com variação vs. período anterior, filtros na barra lateral, cartões de Menção em grade. Gráficos ficaram no commit ca1cc7f até a equipe decidir quais quer.
 """
 
 import os
@@ -24,6 +24,7 @@ cfg = carregar_config(RAIZ / "config.toml")
 # Paleta (validada p/ daltonismo sobre o fundo escuro): azul = setor, vermelho = marca (cores da i9+), verde = positivo.
 AZUL, VERMELHO, VERDE, CINZA = "#4592ff", "#f5121c", "#22a35e", "#8a8f99"
 COR_SENT = {"positivo": VERDE, "neutro": CINZA, "negativo": VERMELHO}
+CARINHA = {"positivo": "🙂", "neutro": "😐", "negativo": "🙁"}
 PERIODOS = {"7 dias": 7, "30 dias": 30, "90 dias": 90, "Tudo": None}
 
 st.set_page_config(page_title=cfg.nome, page_icon=str(RAIZ / "static" / "logo-i9.png"), layout="wide")
@@ -35,7 +36,8 @@ st.markdown(
     [data-testid="stMetricLabel"] {{ text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; opacity: .75; }}
     .pill {{ display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600;
              letter-spacing:.02em; margin-right:.35rem; color:#fff; }}
-    .meta {{ color:#9aa0ab; font-size:.8rem; margin:.25rem 0 .1rem; }}
+    .meta {{ color:#9aa0ab; font-size:.78rem; margin:.4rem 0 0; }}
+    .resumo {{ color:#c9ccd3; font-size:.88rem; line-height:1.4; }}
     .titulo a {{ color:#f2f2f2; text-decoration:none; font-weight:600; font-size:1.02rem; }}
     .titulo a:hover {{ color:{AZUL}; }}
     .faixa {{ height:6px; border-radius:3px; background:linear-gradient(90deg,{VERMELHO},{AZUL}); margin-bottom:.6rem; }}
@@ -64,16 +66,15 @@ df["data"] = df["data"].fillna("")
 df["sentimento"] = df["sentimento"].fillna("sem análise")
 hoje = date.today()
 
-# ---------- Filtros (uma linha) ----------
-fc1, fc2, fc3 = st.columns([2, 1, 2], vertical_alignment="bottom")
-periodo = fc1.pills("Período", list(PERIODOS), default="30 dias", key="periodo") or "Tudo"
-so_marca = fc2.checkbox("Só Menções de marca", key="so_marca", help="Só o que cita a i9+/InoveMais diretamente.")
-busca = fc3.text_input("Buscar no título ou resumo", key="busca", placeholder="ex.: Tecpar, lítio, edital…")
-with st.expander("Mais filtros"):
-    m1, m2, m3 = st.columns(3)
-    termos = m1.multiselect("Termo", sorted(df["termo"].dropna().unique()), key="termos")
-    idiomas = m2.multiselect("Idioma", sorted(df["idioma"].dropna().unique()), key="idiomas")
-    sents = m3.multiselect("Sentimento", ["positivo", "neutro", "negativo", "sem análise"], key="sents")
+# ---------- Filtros (barra lateral: fica à vista enquanto a lista rola) ----------
+with st.sidebar:
+    st.header("Filtros")
+    periodo = st.pills("Período", list(PERIODOS), default="30 dias", key="periodo") or "Tudo"
+    so_marca = st.checkbox("Só Menções de marca", key="so_marca", help="Só o que cita a i9+/InoveMais diretamente.")
+    busca = st.text_input("Buscar no título ou resumo", key="busca", placeholder="ex.: Tecpar, lítio, edital…")
+    sents = st.multiselect("Sentimento", ["positivo", "neutro", "negativo", "sem análise"], key="sents")
+    termos = st.multiselect("Termo", sorted(df["termo"].dropna().unique()), key="termos")
+    idiomas = st.multiselect("Idioma", sorted(df["idioma"].dropna().unique()), key="idiomas")
 
 
 def no_periodo(base, inicio, fim):
@@ -146,22 +147,25 @@ with aba_tabela:
                  hide_index=True, width="stretch", column_config={"link": st.column_config.LinkColumn("link", display_text="abrir")})
 with aba_cartoes:
     st.session_state.setdefault("limite", 40)
-    for _, m in f.head(st.session_state["limite"]).iterrows():
-        borda = VERMELHO if m["marca"] else AZUL
-        etiquetas = pill("🔔 MARCA", VERMELHO) if m["marca"] else ""
-        etiquetas += pill(m["sentimento"], COR_SENT.get(m["sentimento"], "#3a3f4a"))
-        if pd.notna(m["tema"]) and m["tema"]:
-            etiquetas += pill(m["tema"], "#2b3140")
-        nota = f"Relevância {int(m['relevancia'])}/10" if pd.notna(m["relevancia"]) else "sem nota"
-        meta = " · ".join(str(x) for x in [m["fonte"], m["data"], m["idioma"], nota, f"termo: {m['termo']}"] if pd.notna(x) and x)
-        with st.container(border=True):
-            st.markdown(
-                f"<div style='border-left:4px solid {borda};padding-left:.7rem'>"
-                f"<div class='titulo'><a href='{m['link']}' target='_blank'>{m['titulo']}</a></div>"
-                f"<div class='meta'>{meta}</div>{etiquetas}</div>",
-                unsafe_allow_html=True)
-            if m["resumo"] and m["resumo"] != m["titulo"]:
-                st.write(m["resumo"])
+    lote = list(f.head(st.session_state["limite"]).iterrows())
+    for i in range(0, len(lote), 3):
+        for col, (_, m) in zip(st.columns(3), lote[i:i + 3]):
+            etiquetas = pill(f"{CARINHA.get(m['sentimento'], '·')} {m['sentimento']}", COR_SENT.get(m["sentimento"], "#3a3f4a"))
+            if pd.notna(m["tema"]) and m["tema"]:
+                etiquetas += pill(m["tema"], "#2b3140")
+            if m["marca"]:
+                etiquetas += pill("🔔 i9+", VERMELHO)
+            resumo = m["resumo"] if m["resumo"] and m["resumo"] != m["titulo"] else ""
+            if len(resumo) > 220:
+                resumo = resumo[:220].rsplit(" ", 1)[0] + "…"
+            nota = f"{int(m['relevancia'])}/10" if pd.notna(m["relevancia"]) else "sem nota"
+            meta = " · ".join(str(x) for x in [m["fonte"], m["data"], nota] if pd.notna(x) and x)
+            with col.container(border=True):
+                st.markdown(
+                    f"<div>{etiquetas}</div>"
+                    f"<div class='titulo' style='margin:.4rem 0 .3rem'><a href='{m['link']}' target='_blank'>{m['titulo']}</a></div>"
+                    f"<div class='resumo'>{resumo}</div><div class='meta'>{meta}</div>",
+                    unsafe_allow_html=True)
     if len(f) > st.session_state["limite"]:
         if st.button(f"Mostrar mais ({len(f) - st.session_state['limite']} restantes)"):
             st.session_state["limite"] += 40
