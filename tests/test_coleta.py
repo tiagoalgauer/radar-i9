@@ -368,21 +368,46 @@ def test_xml_real_gravado_atravessa_a_coleta_inteira(tmp_path):
     assert len(listar_mencoes(db)) == 38
 
 
-def test_mencao_de_ontem_reprocessada_hoje_com_marca_no_resumo_gera_alerta(tmp_path):
-    class IAQueCitaAMarca(IAFalsa):
+def test_marca_no_trecho_gera_alerta_mesmo_com_a_ia_falhando(tmp_path):
+    n = Noticia("Startup do Tecpar cresce", "https://ex.com/tecpar", "Jornale", "2025-04-15", trecho="A proposta é da i9+ Baterias.")
+    fonte = FonteFalsa({("baterias de segunda vida", "pt"): [n]})
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAQueFalha(), rem, HOJE, db)
+
+    assert len(alertas(rem)) == 1 and n.titulo in alertas(rem)[0][2]
+
+
+def test_resumo_da_ia_citando_a_marca_nao_marca_a_mencao(tmp_path):
+    class IAQueNegaAMarca(IAFalsa):
         def analisar(self, titulo, fonte, trecho=""):
-            return {**super().analisar(titulo, fonte), "resumo": "A InoveMais foi citada como parceira."}
+            return {**super().analisar(titulo, fonte), "resumo": "Não há menção a iniciativas da i9+ ou InoveMais."}
 
     fonte = FonteFalsa({("baterias de segunda vida", "pt"): [N3]})
     db = tmp_path / "radar.db"
     rem = RemetenteFalso()
+
+    coletar(config(tmp_path), fonte, IAQueNegaAMarca(), rem, HOJE, db)
+
+    assert marcas(db) == [] and alertas(rem) == []
+
+
+def test_duplicata_por_titulo_com_trecho_enriquece_a_mencao_e_revela_a_marca(tmp_path):
+    sem = Noticia("Incubada no Tecpar, startup quer eficiência solar", "https://news.google.com/rss/articles/x", "AEN", "2025-04-15")
+    com = Noticia("Incubada no Tecpar, startup quer eficiência solar", "https://jornale.com.br/tecpar", "Jornale", "2025-04-15",
+                  trecho="A proposta é da i9+ Baterias Elétricas e Energias, incubada no Tecpar.")
+    db = tmp_path / "radar.db"
+    rem = RemetenteFalso()
     cfg = config(tmp_path)
-    coletar(cfg, fonte, IAQueFalha(), rem, date(2026, 8, 24), db)
-    assert alertas(rem) == []
+    coletar(cfg, FonteFalsa({("baterias de segunda vida", "pt"): [sem]}), IAFalsa(), rem, date(2026, 8, 24), db)
+    assert marcas(db) == []
 
-    coletar(cfg, fonte, IAQueCitaAMarca(), rem, HOJE, db)
+    coletar(cfg, FonteFalsa({("baterias de segunda vida", "pt"): [com]}), IAFalsa(), rem, HOJE, db)
 
-    assert len(alertas(rem)) == 1 and N3.titulo in alertas(rem)[0][2]
+    m = listar_mencoes(db)[0]
+    assert len(listar_mencoes(db)) == 1 and m.trecho == com.trecho and m.marca
+    assert len(alertas(rem)) == 1
 
 
 def test_alerta_que_falhou_no_envio_sai_na_coleta_seguinte(tmp_path):

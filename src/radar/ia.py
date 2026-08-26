@@ -8,7 +8,7 @@ import urllib.request
 PROMPT = """Você analisa notícias para o Radar de uma empresa brasileira de baterias de segunda vida, economia circular
 e energia renovável (a i9+ / InoveMais). Analise a notícia abaixo e responda SOMENTE um JSON com os campos:
 "resumo" (2 a 3 frases em português do Brasil, mesmo que a notícia esteja em outro idioma; descreva SÓ o que a
-notícia diz — NÃO cite a i9+ nem a InoveMais no resumo a menos que a própria notícia as mencione),
+notícia diz. Os nomes "i9+" e "InoveMais" NUNCA aparecem no resumo — nem para dizer que a notícia não os cita),
 "relevancia" (inteiro de 0 a 10: quanto essa notícia importa para essa empresa acompanhar),
 "tema" (uma categoria curta em português, ex.: "baterias", "economia circular", "energia solar", "regulação", "concorrência", "parceiros"),
 "sentimento" ("positivo", "neutro" ou "negativo" para a i9+).

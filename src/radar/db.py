@@ -68,12 +68,16 @@ def abrir(caminho: Path) -> sqlite3.Connection:
 
 def inserir_mencao(con, chave, noticia, idioma, termo, coletada_em) -> bool:
     """True se entrou; False se já existia (dedupe pela chave do link e, entre Fontes, pelo título)."""
-    if con.execute("SELECT 1 FROM mencoes WHERE lower(titulo) = lower(?) LIMIT 1", (noticia.titulo,)).fetchone():
+    trecho = getattr(noticia, "trecho", "") or ""
+    igual = con.execute("SELECT chave, trecho FROM mencoes WHERE lower(titulo) = lower(?) LIMIT 1", (noticia.titulo,)).fetchone()
+    if igual:
+        if trecho and not igual["trecho"]:  # a outra Fonte trouxe o corpo: enriquece e manda de volta à IA
+            con.execute("UPDATE mencoes SET trecho = ?, reprocessar = 1 WHERE chave = ?", (trecho, igual["chave"]))
         return False
     cur = con.execute(
         "INSERT OR IGNORE INTO mencoes (chave, titulo, link, fonte, data, idioma, termo, coletada_em, trecho)"
         " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        (chave, noticia.titulo, noticia.link, noticia.fonte, noticia.data, idioma, termo, coletada_em, getattr(noticia, "trecho", "") or ""),
+        (chave, noticia.titulo, noticia.link, noticia.fonte, noticia.data, idioma, termo, coletada_em, trecho),
     )
     return cur.rowcount == 1
 
@@ -114,6 +118,10 @@ def gravar_falha_de_ia(con, chave, titulo):
 
 def gravar_marca(con, chave, marca: bool):
     con.execute("UPDATE mencoes SET marca=? WHERE chave=?", (int(marca), chave))
+
+
+def todas(con) -> list[Mencao]:
+    return [_mencao(r) for r in con.execute("SELECT * FROM mencoes")]
 
 
 def por_chaves(con, chaves) -> list[Mencao]:

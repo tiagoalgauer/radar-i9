@@ -15,3 +15,5 @@
 - [x] Mesma Notícia vinda de duas Fontes entra uma vez (dedupe pelo link final, não pelo redirecionador)
 - [ ] Coleta de estreia refeita nos Termos de marca: as matérias de 2025 sobre a i9+ aparecem com 🔔 no Painel
 - [x] Limite documentado: LinkedIn/Instagram não têm API gratuita — ficam fora (dizer isso ao Parceiro)
+
+**Decisão (26/08):** Menção de marca é detectada só em texto da Fonte (título + trecho), **nunca no resumo da IA** — o modelo escreveu "não há menção à i9+" e gerou um Alerta falso. Diverge da spec ("título ou resumo") de propósito.

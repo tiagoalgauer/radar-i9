@@ -59,8 +59,9 @@ def _simples(texto: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", texto or "") if unicodedata.category(c) != "Mn").lower()
 
 
-def e_de_marca(cfg: Config, titulo: str, resumo: str | None, trecho: str = "") -> bool:
-    alvo = _simples(f"{titulo} {trecho or ''} {resumo or ''}")
+def e_de_marca(cfg: Config, titulo: str, trecho: str = "") -> bool:
+    """Só texto da Fonte (título + trecho). O resumo é gerado pela IA e já falou "não há menção à i9+" — nunca conta."""
+    alvo = _simples(f"{titulo} {trecho or ''}")
     return any(_simples(t.texto) in alvo for t in cfg.termos if t.marca)
 
 
@@ -137,9 +138,9 @@ def _coletar(cfg, fonte, ia, remetente, hoje, con, log, feeds):
                 log(f"ia: falhou '{m.titulo}': {e}")
     log(f"ia: {ok} ok, {falhas} falhas (ficam para reprocessar)")
 
-    # marca é recalculada para tudo que passou pela IA nesta Coleta (novas e reprocessadas)
-    for m in db.por_chaves(con, tocadas):
-        db.gravar_marca(con, m.chave, e_de_marca(cfg, m.titulo, m.resumo, m.trecho))
+    # marca é recalculada para todo o histórico (barato, idempotente; Termos de marca podem mudar no config)
+    for m in db.todas(con):
+        db.gravar_marca(con, m.chave, e_de_marca(cfg, m.titulo, m.trecho))
     con.commit()
 
     marcas = db.sem_envio(con, "alerta", db.mencoes_de_marca(con))
