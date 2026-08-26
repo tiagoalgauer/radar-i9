@@ -106,6 +106,16 @@ A mesma matéria vinda de duas Fontes entra uma vez (link real + título).
 
 Fora do alcance (sem API gratuita): LinkedIn e Instagram — ver `docs/research/fontes-alem-do-google-news.md`.
 
+## Adicionar ou trocar um Termo sem instalar nada
+
+1. Abra https://github.com/tiagoalgauer/radar-i9/blob/main/config.toml e clique no lápis (**Edit**).
+2. Copie um bloco `[[termos]]` existente e mude o `texto` (sem aspas dentro do texto) e os `idiomas` (`["pt"]`, `["en"]` ou os dois).
+   Se for nome da empresa, coloque `marca = true` — aí dispara Alerta no mesmo dia.
+3. **Commit changes** (botão verde). Pronto: o robô usa a lista nova na próxima Coleta (todo dia às 8h).
+   Pra rodar na hora: aba **Actions** → *Radar* → **Run workflow**.
+
+Quem tem permissão de editar: quem for colaborador do repositório (Settings → Collaborators). Dá pra convidar o Sandro.
+
 ## Configurar
 
 `config.toml` — Termos (com `marca = true` para os que disparam Alerta; `idiomas = []` para só detectar
