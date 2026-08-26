@@ -1,7 +1,7 @@
 """Painel do Radar i9+ — somente leitura, lê o radar.db do repositório. `uv run streamlit run painel.py`.
 
 Layout inspirado nas plataformas de clipping (Brand24, Knewin, Zeeng, CoverageBook): números grandes no topo
-com variação vs. período anterior, volume no tempo, favorabilidade, top Temas/veículos clicáveis, cartões de Menção.
+com variação vs. período anterior, filtros numa linha, cartões de Menção. Gráficos ficaram no commit ca1cc7f até a equipe decidir quais quer.
 """
 
 import os
@@ -9,7 +9,6 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
-import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -65,7 +64,7 @@ df["data"] = df["data"].fillna("")
 df["sentimento"] = df["sentimento"].fillna("sem análise")
 hoje = date.today()
 
-# ---------- Filtros (uma linha; os gráficos também filtram) ----------
+# ---------- Filtros (uma linha) ----------
 fc1, fc2, fc3 = st.columns([2, 1, 2], vertical_alignment="bottom")
 periodo = fc1.pills("Período", list(PERIODOS), default="30 dias", key="periodo") or "Tudo"
 so_marca = fc2.checkbox("Só Menções de marca", key="so_marca", help="Só o que cita a i9+/InoveMais diretamente.")
@@ -127,65 +126,6 @@ k3.metric("Favorabilidade", f"{fav}%" if fav is not None else "—",
 k4.metric("Veículos", int(f["fonte"].nunique()), help="Sites/jornais diferentes que publicaram.")
 k5.metric("Relevância média", f"{f['relevancia'].mean():.1f}/10" if f["relevancia"].notna().any() else "—",
           help="Nota 0–10 dada pela IA. Só ordena; nunca corta.")
-
-# ---------- Gráficos ----------
-
-
-def barras_h(campo, titulo, chave):
-    """Top 8 em barras horizontais; clicar numa barra filtra a lista abaixo (limpe clicando fora)."""
-    top = f[campo].dropna().value_counts().head(8).reset_index()
-    top.columns = [campo, "n"]
-    sel = alt.selection_point(fields=[campo], name="sel")
-    ch = (alt.Chart(top).mark_bar(cornerRadiusEnd=4, height=18, color=AZUL)
-          .encode(x=alt.X("n:Q", axis=None), y=alt.Y(f"{campo}:N", sort="-x", title=None, axis=alt.Axis(labelLimit=180)),
-                  opacity=alt.condition(sel, alt.value(1), alt.value(0.35)),
-                  tooltip=[alt.Tooltip(f"{campo}:N", title=titulo), alt.Tooltip("n:Q", title="Menções")])
-          .add_params(sel).properties(height=8 * 26, title=alt.Title(titulo, anchor="start", fontSize=13, color="#c9ccd3")))
-    texto = ch.mark_text(align="left", dx=4, color="#f2f2f2", fontSize=11).encode(text="n:Q", opacity=alt.value(1))
-    ev = st.altair_chart((ch + texto).configure_view(stroke=None), on_select="rerun", key=chave)
-    return ev.selection.get("sel", {}).get(campo, []) if hasattr(ev, "selection") else []
-
-
-g1, g2 = st.columns([3, 2])
-with g1:
-    if len(com_data):
-        semanal = not dias or dias > 60
-        com_data["semana"] = pd.to_datetime(com_data["data"]).dt.to_period("W").dt.start_time if semanal else pd.to_datetime(com_data["data"])
-        com_data["tipo"] = com_data["marca"].map({True: "Marca (i9+)", False: "Setor"})
-        modo = st.pills("Colorir por", ["Marca × setor", "Sentimento"], default="Marca × setor", key="cor_volume", label_visibility="collapsed")
-        if modo == "Sentimento":  # padrão Buzzmonitor: volume e mix de sentimento numa figura só
-            cor, dom, cores = "sentimento", [*COR_SENT, "sem análise"], [*COR_SENT.values(), "#3a3f4a"]
-        else:
-            cor, dom, cores = "tipo", ["Setor", "Marca (i9+)"], [AZUL, VERMELHO]
-        vol = (alt.Chart(com_data).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
-               .encode(x=alt.X("semana:T", title=None, axis=alt.Axis(format="%d/%m", grid=False, labelColor="#9aa0ab")),
-                       y=alt.Y("count():Q", title=None, axis=alt.Axis(gridColor="#262a33", labelColor="#9aa0ab", tickCount=4)),
-                       color=alt.Color(f"{cor}:N", scale=alt.Scale(domain=dom, range=cores),
-                                       legend=alt.Legend(title=None, orient="top-right", labelColor="#c9ccd3")),
-                       tooltip=[alt.Tooltip("semana:T", title="Data", format="%d/%m/%Y"), alt.Tooltip(f"{cor}:N", title=""), alt.Tooltip("count():Q", title="Menções")])
-               .properties(height=8 * 26, title=alt.Title("Volume de Menções por " + ("semana" if semanal else "dia"),
-                                                         anchor="start", fontSize=13, color="#c9ccd3")))
-        st.altair_chart(vol.configure_view(stroke=None).configure(background="transparent"), width="stretch")
-with g2:
-    cont = f["sentimento"].value_counts().reindex(["positivo", "neutro", "negativo"], fill_value=0).reset_index()
-    cont.columns = ["sentimento", "n"]
-    sent = (alt.Chart(cont).mark_bar(cornerRadiusEnd=4, height=22)
-            .encode(x=alt.X("n:Q", axis=None), y=alt.Y("sentimento:N", sort=["positivo", "neutro", "negativo"], title=None, axis=alt.Axis(labelColor="#c9ccd3")),
-                    color=alt.Color("sentimento:N", scale=alt.Scale(domain=list(COR_SENT), range=list(COR_SENT.values())), legend=None),
-                    tooltip=[alt.Tooltip("sentimento:N", title="Sentimento"), alt.Tooltip("n:Q", title="Menções")])
-            .properties(height=8 * 26, title=alt.Title("Sentimento para a i9+", anchor="start", fontSize=13, color="#c9ccd3")))
-    rot = sent.mark_text(align="left", dx=4, color="#f2f2f2", fontSize=11).encode(text="n:Q")
-    st.altair_chart((sent + rot).configure_view(stroke=None).configure(background="transparent"), width="stretch")
-
-g3, g4 = st.columns(2)
-with g3:
-    temas_sel = barras_h("tema", "Temas mais frequentes", "g_temas")
-with g4:
-    fontes_sel = barras_h("fonte", "Veículos que mais publicaram", "g_fontes")
-if temas_sel:
-    f = f[f["tema"].isin(temas_sel)]
-if fontes_sel:
-    f = f[f["fonte"].isin(fontes_sel)]
 
 # ---------- Lista ----------
 f = f.sort_values(["marca", "relevancia", "data"], ascending=[False, False, False], na_position="last")
