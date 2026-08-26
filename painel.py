@@ -24,7 +24,15 @@ cfg = carregar_config(RAIZ / "config.toml")
 # Paleta (validada p/ daltonismo sobre o fundo escuro): azul = setor, vermelho = marca (cores da i9+), verde = positivo.
 AZUL, VERMELHO, VERDE, CINZA = "#4592ff", "#f5121c", "#22a35e", "#8a8f99"
 COR_SENT = {"positivo": VERDE, "neutro": CINZA, "negativo": VERMELHO}
-CARINHA = {"positivo": "🙂", "neutro": "😐", "negativo": "🙁"}
+# Ícones (SVG inline, traço branco) — sem emoji.
+_SVG = "<svg width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-1px;margin-right:.3rem'>{}</svg>"
+ICONE = {
+    "positivo": _SVG.format("<path d='M20 6 9 17l-5-5'/>"),                     # check
+    "neutro": _SVG.format("<path d='M5 12h14'/>"),                              # traço
+    "negativo": _SVG.format("<path d='M12 5v9'/><path d='M12 18h.01'/>"),      # exclamação
+    "sem análise": _SVG.format("<circle cx='12' cy='12' r='8'/>"),
+    "marca": _SVG.format("<path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9'/><path d='M10 21h4'/>"),  # sino
+}
 PERIODOS = {"7 dias": 7, "30 dias": 30, "90 dias": 90, "Tudo": None}
 
 st.set_page_config(page_title=cfg.nome, page_icon=str(RAIZ / "static" / "logo-i9.png"), layout="wide")
@@ -53,8 +61,8 @@ cab, status = st.columns([3, 2], vertical_alignment="bottom")
 cab.title(cfg.nome)
 cab.caption("Tudo que saiu sobre a i9+/InoveMais e o setor, coletado todo dia pelo robô. Nada é descartado; a Relevância só ordena.")
 status.markdown(
-    f"<div class='meta' style='text-align:right'>🤖 Última Coleta: <b>{ultima or '—'}</b> &nbsp;·&nbsp; "
-    f"📨 Último Digest: <b>{ultimo_digest or '—'}</b> &nbsp;·&nbsp; Próximo: <b>{proximo}</b> (a cada {cfg.intervalo_dias} dias)</div>",
+    f"<div class='meta' style='text-align:right'>Última Coleta: <b>{ultima or '—'}</b> &nbsp;·&nbsp; "
+    f"Último Digest: <b>{ultimo_digest or '—'}</b> &nbsp;·&nbsp; Próximo: <b>{proximo}</b> (a cada {cfg.intervalo_dias} dias)</div>",
     unsafe_allow_html=True)
 
 if not mencoes:
@@ -133,7 +141,7 @@ f = f.sort_values(["marca", "relevancia", "data"], ascending=[False, False, Fals
 st.divider()
 t1, t2 = st.columns([3, 1], vertical_alignment="center")
 t1.subheader(f"{len(f)} de {len(df)} Menções")
-t2.download_button("⬇️ Baixar tudo (CSV)", df.to_csv(index=False).encode("utf-8-sig"), "radar-i9.csv", "text/csv",
+t2.download_button("Baixar tudo (CSV)", df.to_csv(index=False).encode("utf-8-sig"), "radar-i9.csv", "text/csv", icon=":material/download:",
                    help="O histórico completo, sem filtro — para guardar no computador da empresa.", width="stretch")
 
 
@@ -150,11 +158,11 @@ with aba_cartoes:
     lote = list(f.head(st.session_state["limite"]).iterrows())
     for i in range(0, len(lote), 3):
         for col, (_, m) in zip(st.columns(3), lote[i:i + 3]):
-            etiquetas = pill(f"{CARINHA.get(m['sentimento'], '·')} {m['sentimento']}", COR_SENT.get(m["sentimento"], "#3a3f4a"))
+            etiquetas = pill(ICONE.get(m["sentimento"], "") + m["sentimento"], COR_SENT.get(m["sentimento"], "#3a3f4a"))
             if pd.notna(m["tema"]) and m["tema"]:
                 etiquetas += pill(m["tema"], "#2b3140")
             if m["marca"]:
-                etiquetas += pill("🔔 i9+", VERMELHO)
+                etiquetas += pill(ICONE["marca"] + "i9+", VERMELHO)
             resumo = m["resumo"] if m["resumo"] and m["resumo"] != m["titulo"] else ""
             if len(resumo) > 220:
                 resumo = resumo[:220].rsplit(" ", 1)[0] + "…"

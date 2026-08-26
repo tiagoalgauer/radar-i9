@@ -18,7 +18,7 @@ def _item_texto(m):
 def _item_html(m):
     nota = f" · relevância {m.relevancia}/10" if m.relevancia is not None else ""
     tema = f" · {html.escape(m.tema)}" if m.tema else ""
-    marca = " 🔔" if m.marca else ""
+    marca = " [MARCA]" if m.marca else ""
     return (
         f'<p><b><a href="{html.escape(m.link)}">{html.escape(m.titulo)}</a>{marca}</b><br>'
         f"<small>{html.escape(m.fonte or '')} · {m.data}{nota}{tema}</small><br>"
@@ -28,7 +28,7 @@ def _item_html(m):
 
 def montar_alerta(mencoes, link_painel, nome="Radar i9+"):
     n = len(mencoes)
-    assunto = f"🔔 {nome} — Alerta de marca: {n} {'menções' if n != 1 else 'menção'} à i9+/InoveMais hoje"
+    assunto = f"{nome} — Alerta de marca: {n} {'menções' if n != 1 else 'menção'} à i9+/InoveMais hoje"
     texto = (f"A i9+/InoveMais foi citada em {n} Menção(ões) encontrada(s) hoje:\n\n" + "\n".join(_item_texto(m) for m in mencoes)
              + f"\nPainel completo: {link_painel}\n")
     corpo = "".join(_item_html(m) for m in mencoes)
@@ -43,7 +43,7 @@ def montar_digest(mencoes, link_painel, intervalo_dias, nome="Radar i9+", primei
     restantes = total - len(top)
     n_marca = sum(1 for m in mencoes if m.marca)
     periodo = "desde o início" if primeiro else "desde o último Digest"
-    assunto = f"📰 {nome} — Digest: {total} menções {periodo}" + (f" ({n_marca} da marca)" if n_marca else "")
+    assunto = f"{nome} — Digest: {total} menções {periodo}" + (f" ({n_marca} da marca)" if n_marca else "")
     if total == 0:
         texto = f"Nenhuma menção nova {periodo}. O robô continua vigiando (próximo Digest em {intervalo_dias} dias).\nPainel: {link_painel}\n"
         html_ = f"<h2>{html.escape(nome)} — Digest</h2><p>Nenhuma menção nova {periodo}. O robô continua vigiando (próximo Digest em {intervalo_dias} dias).</p><p><a href=\"{html.escape(link_painel)}\">Abrir o Painel</a></p>"
