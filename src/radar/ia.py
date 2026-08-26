@@ -29,7 +29,8 @@ def _post_json(url, corpo, cabecalhos, tentativas=4, esperar=time.sleep):
             if e.code in (429, 500, 502, 503) and i < tentativas - 1:
                 esperar(2 ** (i + 1))  # 2, 4, 8 s
                 continue
-            raise
+            corpo_erro = e.read().decode("utf-8", "replace")[:300].replace("\n", " ")
+            raise RuntimeError(f"HTTP {e.code} em {url.split('?')[0]}: {corpo_erro}") from e
         except (urllib.error.URLError, TimeoutError):
             if i < tentativas - 1:
                 esperar(2 ** (i + 1))
