@@ -59,13 +59,9 @@ ultima = ultima_coleta(DB) if DB.exists() else None
 ultimo_digest = ultimo_envio_por_tipo(DB, "digest") if DB.exists() else None
 proximo = (date.fromisoformat(ultimo_digest) + timedelta(days=cfg.intervalo_dias)).isoformat() if ultimo_digest else "na próxima Coleta"
 
-cab, status = st.columns([3, 2], vertical_alignment="bottom")
-cab.title(cfg.nome)
-cab.caption("Tudo que saiu sobre a i9+/InoveMais e o setor, coletado todo dia pelo robô. Nada é descartado; a Relevância só ordena.")
-status.markdown(
-    f"<div class='meta' style='text-align:right'>Última Coleta: <b>{ultima or '—'}</b> &nbsp;·&nbsp; "
-    f"Último Digest: <b>{ultimo_digest or '—'}</b> &nbsp;·&nbsp; Próximo: <b>{proximo}</b> (a cada {cfg.intervalo_dias} dias)</div>",
-    unsafe_allow_html=True)
+st.title(cfg.nome)
+st.caption("Tudo que saiu sobre a i9+/InoveMais e o setor, coletado todo dia pelo robô. Nada é descartado; a Relevância só ordena.")
+st.caption(f"Última Coleta: **{ultima or '—'}** · Último Digest: **{ultimo_digest or '—'}** · Próximo Digest: **{proximo}** (a cada {cfg.intervalo_dias} dias)")
 
 if not mencoes:
     st.info("Ainda não há Menções. O robô roda todo dia às 8h; o primeiro histórico aparece depois da primeira Coleta.")
@@ -123,12 +119,9 @@ def delta(atual, ant, sufixo=""):
 
 
 # ---------- Números grandes ----------
-com_data = f[f["data"] != ""].copy()
-por_dia = com_data.groupby("data").size().reindex(
-    [(hoje - timedelta(days=i)).isoformat() for i in range(min(dias or 30, 30) - 1, -1, -1)], fill_value=0)
 fav, fav_ant = favorabilidade(f), favorabilidade(anterior) if anterior is not None else None
 k1, k2, k3, k4, k5 = st.columns(5)
-k1.metric("Menções", len(f), delta(len(f), len(anterior) if anterior is not None else None), chart_data=por_dia.tolist(), chart_type="area", border=True)
+k1.metric("Menções", len(f), delta(len(f), len(anterior) if anterior is not None else None), border=True)
 k2.metric("Menções de marca", int(f["marca"].sum()), delta(int(f["marca"].sum()), int(anterior["marca"].sum()) if anterior is not None else None), border=True,
           help="Citam a i9+/InoveMais diretamente (título ou trecho). Disparam Alerta no mesmo dia.")
 k3.metric("Favorabilidade", f"{fav}%" if fav is not None else "—",
