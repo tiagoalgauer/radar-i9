@@ -10,37 +10,30 @@ Projeto de Extensão "TI e Sociedade" — Universidade Positivo, Equipe 6 (ADS),
 - Vocabulário do projeto: [`CONTEXT.md`](CONTEXT.md) · Decisões: [`docs/adr/`](docs/adr/) · Spec e tickets: [`.scratch/radar-i9/`](.scratch/radar-i9/)
 - Cotas gratuitas verificadas em 2026: [`docs/research/free-tiers-2026.md`](docs/research/free-tiers-2026.md)
 
-## Equipe: como trabalhar sem o Tiago (viagem de 28/08 a ~14/09)
+## Como a equipe trabalha no código
 
-O que está no ar roda sozinho: o robô acorda todo dia às 8h (aba **Actions**) e o Painel https://radar-i9.streamlit.app
-republica a cada commit na `main`. Nenhuma dessas duas coisas precisa de gente.
+Este repositório é a referência (o robô roda aqui todo dia às 8h e o Painel https://radar-i9.streamlit.app republica a cada
+commit na `main`). Pra trabalhar sem depender de ninguém, cada frente da equipe usa um **fork**:
 
-**O que falta** está nas [Issues](https://github.com/tiagoalgauer/radar-i9/issues) deste repositório (público: qualquer um lê e comenta).
-Pegue uma, comente "peguei", comente "feito" quando terminar. Etiquetas: `sem-codigo` (conta, reunião, config), `codigo`
-(mexe em `.py`), `so-o-tiago` (Secrets deste repo/do Streamlit — só o dono consegue; no fork, quem consegue é o dono do fork).
+1. Clique em **Fork** (canto superior direito). Vira `seu-usuario/radar-i9`, uma cópia inteira sua.
+2. No fork, *Settings → Collaborators* pra dar acesso a quem for trabalhar junto.
+3. O que não vem no fork (10 min, tudo descrito neste README):
+   - *Settings → Secrets and variables → Actions*: `GEMINI_API_KEY` (chave grátis, seção "Configurar"); `SMTP_USER`/`SMTP_PASS`
+     quando existir o Gmail do projeto. Enquanto não tem SMTP: **Variables** → `RADAR_SIMULAR_ENVIO` = `1`.
+   - Aba **Actions** → *enable* (fork vem com o cron desligado) → *radar → Run workflow* pra testar.
+   - Painel do fork no Streamlit (seção "Painel na web"); nos Secrets do Streamlit, `RADAR_REPO = "seu-usuario/radar-i9"` pro
+     botão de Termos gravar no fork. Trocar `link_painel` no `config.toml`.
+4. Quando algo estiver pronto, abra um **Pull Request** do fork pra cá — ou siga só no fork, tanto faz.
 
-### Opção 1 (recomendada, não depende do Tiago): a equipe faz um Fork
+**O que falta** está nas [Issues](https://github.com/tiagoalgauer/radar-i9/issues). Pegue uma, comente "peguei", comente "feito"
+ao terminar. Etiquetas: `sem-codigo` (conta, reunião, config), `codigo` (mexe em `.py`), `secrets` (Secrets do GitHub/Streamlit —
+quem faz é o dono do repositório onde o robô roda, ou seja, do fork).
 
-1. **Um** colega clica em **Fork** (canto superior direito) → vira `usuario/radar-i9`, uma cópia inteira que é da equipe.
-2. Nesse fork: *Settings → Collaborators* → adicionar os outros 7. Pronto, todo mundo tem escrita no repo da equipe.
-3. Refazer o que não vem no fork (10 min, tudo descrito neste README):
-   - *Settings → Secrets and variables → Actions*: `GEMINI_API_KEY` (chave grátis, seção "Configurar"); `SMTP_USER`/`SMTP_PASS` quando existir o Gmail do projeto.
-     Enquanto não tem SMTP: **Variables** → `RADAR_SIMULAR_ENVIO` = `1`.
-   - Aba **Actions** → *I understand… enable them* (fork vem com o cron desligado) → *radar → Run workflow* pra testar.
-   - Publicar o Painel do fork no Streamlit (seção "Painel na web") com a conta de quem forkou; nos Secrets do Streamlit,
-     `RADAR_REPO = "usuario/radar-i9"` pro botão de Termos gravar no fork. Trocar `link_painel` no `config.toml`.
-4. Trabalhar no fork como num repo normal (regras abaixo). O repositório original fica como estava, em modo simulado.
+Regras pra ninguém derrubar o que está no ar:
 
-### Opção 2: colaborador no repositório original
-
-Precisa que o Tiago adicione o usuário do GitHub de cada um (*Settings → Collaborators*). Se acontecer antes da viagem, ótimo:
-um repo só, Painel e Secrets já configurados. Se não, Opção 1.
-
-### Regras pra ninguém derrubar o que está no ar (valem nos dois casos)
-
-1. Nunca trabalhe direto na `main`: `git switch -c minha-mudanca` → commit → `git push -u origin minha-mudanca` → **Pull Request**.
-2. **Outro colega** revisa e faz o merge (leu, o check `testes` está verde). Ninguém espera o Tiago.
-3. **Nunca commite `radar.db`.** O robô commita ele todo dia; se aparecer no seu `git status` depois de um `uv run radar`, rode `git restore radar.db`.
+1. Trabalhe em branch: `git switch -c minha-mudanca` → commit → `git push -u origin minha-mudanca` → Pull Request.
+2. Outro colega revisa e faz o merge quando o check `testes` estiver verde.
+3. **Não commite `radar.db`.** O robô commita ele todo dia; se aparecer no seu `git status` depois de um `uv run radar`, rode `git restore radar.db`.
 4. Antes de abrir o PR: `git pull --rebase origin main` e `uv run pytest`.
 5. Quebrou a `main` (Painel com erro)? `git revert <commit>` + push — o Painel volta em 1–2 min.
 
