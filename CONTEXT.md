@@ -17,7 +17,7 @@ O item bruto que uma Fonte devolve (título, link, veículo, data), antes de ent
 _Avoid_: item, entrada, resultado
 
 **Fonte**:
-De onde as Notícias vêm. Hoje só o Google News; a busca é por Termo × idioma.
+De onde as Notícias vêm: Google News RSS e Bing News RSS (busca por Termo × idioma) e feeds fixos (RSS/Atom, inclusive Google Alerts).
 _Avoid_: feed, provedor de notícias
 
 **Menção**:
